@@ -33,8 +33,7 @@
     "dev": "vite build --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check": "npm run typecheck && npm test && npm run build",
-    "prepare": "npm run build"
+    "check": "npm run typecheck && npm test && npm run build"
   },
   "engines": {
     "node": ">=22"
