@@ -35,14 +35,6 @@ The plugin follows the app language. The labels below use the English copy.
 ### From GitHub
 
 ```sh
-opencode plugin add github:jtaraque/opencode-desktop-go-usage
-```
-
-The command installs the plugin and adds it to your global OpenCode configuration. Reload the desktop window if the pill does not appear. You can also check **Settings → Extensions → Plugins**.
-
-### From a local clone
-
-```sh
 git clone https://github.com/jtaraque/opencode-desktop-go-usage.git
 cd opencode-desktop-go-usage
 ```
@@ -59,11 +51,11 @@ Add the directory to the `plugins` array in `~/.config/opencode/opencode.json` (
 }
 ```
 
-Reload the window. The desktop app reads plugin entries from `opencode.json(c)`, not from `cli.json`.
+Reload the window. The desktop app reads plugin entries from `opencode.json(c)`, not from `cli.json`. You can also check **Settings → Extensions → Plugins**.
 
 ### Uninstall
 
-Remove the entry from `opencode.json(c)` and reload the window. If you installed it from GitHub, `opencode plugin remove opencode-desktop-go-usage` removes the global entry.
+Remove the entry from `opencode.json(c)`, reload the window, and delete the clone if you no longer need it.
 
 ## Usage
 
@@ -106,6 +98,10 @@ The GUI plugin API is experimental. A future OpenCode release may change it; che
 - Run `opencode plugin list` and check that the plugin is active.
 - Confirm you are using the vertical-tabs layout. Version 0.1 anchors the panel to the sidebar footer.
 - Reload the window.
+
+**`opencode plugin add github:…` fails with `git dep preparation failed`**
+
+Use the clone and `plugins` path method above. Some Windows CLI builds currently fail when installing Git packages directly.
 
 **The panel says there is no Go subscription**
 
