@@ -1,7 +1,8 @@
 import { createEffect, createMemo, createSignal, For, onCleanup, Show, untrack, type Accessor } from "solid-js"
 import { Portal } from "solid-js/web"
-import { Plugin, Slot, Style, TitlebarItem, usePlugin, type Params } from "@opencode/plugin/gui"
-import { clamp, cooldownLeft, paceOf, remainingPercent, windowLeft, type WindowKey } from "./usage"
+import { Plugin, Slot, Store, Style, TitlebarItem, usePlugin, type Params } from "@opencode/plugin/gui"
+import { Schema } from "effect"
+import { clamp, cooldownLeft, effectivePlacement, paceOf, remainingPercent, windowLeft, type EffectivePlacement, type Placement, type WindowKey } from "./usage"
 import gauge from "./icons/gauge.svg?raw"
 import css from "./style.css?inline"
 
@@ -23,9 +24,16 @@ type Limits = {
 type Anchor = {
   left: number
   width: number
-  bottom: number
+  top?: number
+  bottom?: number
   maxHeight: number
 }
+
+const PLACEMENTS: { id: Placement; label: string; description: string }[] = [
+  { id: "footer", label: "settings.footer.label", description: "settings.footer.description" },
+  { id: "header", label: "settings.header.label", description: "settings.header.description" },
+  { id: "sidebar", label: "settings.sidebar.label", description: "settings.sidebar.description" },
+]
 
 const OPEN_COOLDOWN = 60_000
 const AUTO_COOLDOWN = 5 * 60_000
@@ -33,6 +41,12 @@ const MANUAL_COOLDOWN = 60_000
 
 const definition = Plugin.define({
   icons: { gauge },
+  stores: {
+    prefs: Store.global(
+      Schema.Struct({ placement: Schema.Literals(["footer", "header", "sidebar"]) }),
+      { placement: "footer" },
+    ),
+  },
   i18n: {
     es: {
       "pill.label": "Uso de Go",
@@ -64,6 +78,17 @@ const definition = Plugin.define({
       "footer.refreshIn": "Disponible en {{seconds}} s",
       "footer.console": "Consola ↗",
       "close": "Cerrar",
+      "settings.open": "Ajustes de posición",
+      "settings.title": "Posición",
+      "settings.description": "Elige dónde aparece el pill.",
+      "settings.saved": "Posición actualizada",
+      "settings.footer.label": "Junto a actualizar",
+      "settings.footer.description": "El mismo hueco que el botón de actualizar: pie de la barra lateral en pestañas laterales, final de las pestañas en top tabs.",
+      "settings.header.label": "Cabecera de sesión",
+      "settings.header.description": "Junto a los controles de contexto.",
+      "settings.sidebar.label": "Cabecera de la barra lateral",
+      "settings.sidebar.description": "Junto al botón de barra lateral.",
+      "settings.unavailable": "No disponible en este diseño.",
       "duration.days": "{{days}} d {{hours}} h",
       "duration.hours": "{{hours}} h {{minutes}} min",
       "duration.minutes": "{{minutes}} min",
@@ -98,9 +123,291 @@ const definition = Plugin.define({
       "footer.refreshIn": "Available in {{seconds}}s",
       "footer.console": "Console ↗",
       "close": "Close",
+      "settings.open": "Position settings",
+      "settings.title": "Position",
+      "settings.description": "Choose where the pill appears.",
+      "settings.saved": "Position updated",
+      "settings.footer.label": "Next to update",
+      "settings.footer.description": "The same slot as the update button: sidebar footer in side tabs, end of the tab strip in top tabs.",
+      "settings.header.label": "Session header",
+      "settings.header.description": "Next to the context controls.",
+      "settings.sidebar.label": "Sidebar header",
+      "settings.sidebar.description": "Next to the sidebar toggle.",
+      "settings.unavailable": "Not available in this layout.",
       "duration.days": "{{days}}d {{hours}}h",
       "duration.hours": "{{hours}}h {{minutes}}m",
       "duration.minutes": "{{minutes}}m",
+    },
+    // The desktop app uses short locale ids; `br` is Portuguese (Brazil).
+    de: {
+      "pill.label": "Go-Nutzung",
+      "pill.title": "OpenCode Go-Nutzung",
+      "panel.title": "OpenCode Go",
+      "panel.workspace": "Arbeitsbereich",
+      "window.rolling": "5 Stunden",
+      "window.weekly": "Wöchentlich",
+      "window.monthly": "Monatlich",
+      "row.remaining": "{{percent}} % übrig",
+      "row.reset": "Zurücksetzung in {{duration}} · {{time}}",
+      "row.resetNow": "Wird jetzt zurückgesetzt",
+      "row.limited": "Limit erreicht",
+      "row.windowLeft": "{{percent}} % des Zeitfensters übrig · Zurücksetzung in {{duration}} · {{pace}}",
+      "pace.under": "Unter dem Tempo",
+      "pace.over": "Über dem Tempo",
+      "pace.even": "Im Tempo",
+      "loading": "Wird geladen…",
+      "error": "Nutzung konnte nicht geladen werden.",
+      "error.stale": "Aktualisierung fehlgeschlagen.",
+      "retry": "Erneut versuchen",
+      "empty.title": "Kein Go-Abo verbunden",
+      "empty.body": "OpenCode Go verbinden, um die Nutzung zu sehen.",
+      "empty.console": "Konsole öffnen",
+      "footer.now": "Gerade eben",
+      "footer.agoMinutes": "vor {{count}} Min.",
+      "footer.refresh": "Aktualisieren",
+      "footer.refreshing": "Wird aktualisiert…",
+      "footer.refreshIn": "Verfügbar in {{seconds}} s",
+      "footer.console": "Konsole ↗",
+      "close": "Schließen",
+      "settings.open": "Positionseinstellungen",
+      "settings.title": "Position",
+      "settings.description": "Bestimmt, wo die Anzeige erscheint.",
+      "settings.saved": "Position aktualisiert",
+      "settings.footer.label": "Neben Aktualisieren",
+      "settings.footer.description": "Derselbe Platz wie die Schaltfläche „Aktualisieren“: Fuß der Seitenleiste bei seitlichen Tabs, Ende der Tab-Leiste bei oberen Tabs.",
+      "settings.header.label": "Sitzungskopf",
+      "settings.header.description": "Neben den Kontext-Steuerelementen.",
+      "settings.sidebar.label": "Seitenleisten-Kopf",
+      "settings.sidebar.description": "Neben dem Seitenleisten-Schalter.",
+      "settings.unavailable": "In diesem Layout nicht verfügbar.",
+      "duration.days": "{{days}} T {{hours}} Std.",
+      "duration.hours": "{{hours}} Std. {{minutes}} Min.",
+      "duration.minutes": "{{minutes}} Min.",
+    },
+    fr: {
+      "pill.label": "Utilisation Go",
+      "pill.title": "Utilisation d’OpenCode Go",
+      "panel.title": "OpenCode Go",
+      "panel.workspace": "Espace de travail",
+      "window.rolling": "5 heures",
+      "window.weekly": "Hebdomadaire",
+      "window.monthly": "Mensuel",
+      "row.remaining": "{{percent}} % restant",
+      "row.reset": "Réinitialisation dans {{duration}} · {{time}}",
+      "row.resetNow": "Réinitialisation en cours",
+      "row.limited": "Limite atteinte",
+      "row.windowLeft": "{{percent}} % de la fenêtre restant · réinitialisation dans {{duration}} · {{pace}}",
+      "pace.under": "Sous le rythme",
+      "pace.over": "Au-dessus du rythme",
+      "pace.even": "Au rythme",
+      "loading": "Chargement…",
+      "error": "Impossible de charger l’utilisation.",
+      "error.stale": "Impossible d’actualiser.",
+      "retry": "Réessayer",
+      "empty.title": "Aucun abonnement Go connecté",
+      "empty.body": "Connectez OpenCode Go pour voir l’utilisation.",
+      "empty.console": "Ouvrir la console",
+      "footer.now": "À l’instant",
+      "footer.agoMinutes": "il y a {{count}} min",
+      "footer.refresh": "Actualiser",
+      "footer.refreshing": "Actualisation…",
+      "footer.refreshIn": "Disponible dans {{seconds}} s",
+      "footer.console": "Console ↗",
+      "close": "Fermer",
+      "settings.open": "Paramètres de position",
+      "settings.title": "Position",
+      "settings.description": "Choisissez où apparaît la pastille.",
+      "settings.saved": "Position mise à jour",
+      "settings.footer.label": "À côté d’Actualiser",
+      "settings.footer.description": "Le même emplacement que le bouton Actualiser : pied de la barre latérale en onglets latéraux, fin de la barre d’onglets en onglets supérieurs.",
+      "settings.header.label": "En-tête de session",
+      "settings.header.description": "À côté des contrôles de contexte.",
+      "settings.sidebar.label": "En-tête de la barre latérale",
+      "settings.sidebar.description": "À côté du bouton de barre latérale.",
+      "settings.unavailable": "Non disponible dans cette disposition.",
+      "duration.days": "{{days}} j {{hours}} h",
+      "duration.hours": "{{hours}} h {{minutes}} min",
+      "duration.minutes": "{{minutes}} min",
+    },
+    br: {
+      "pill.label": "Uso do Go",
+      "pill.title": "Uso do OpenCode Go",
+      "panel.title": "OpenCode Go",
+      "panel.workspace": "Área de trabalho",
+      "window.rolling": "5 horas",
+      "window.weekly": "Semanal",
+      "window.monthly": "Mensal",
+      "row.remaining": "{{percent}}% restante",
+      "row.reset": "Reinicia em {{duration}} · {{time}}",
+      "row.resetNow": "Reiniciando agora",
+      "row.limited": "Limite atingido",
+      "row.windowLeft": "{{percent}}% da janela restante · reinicia em {{duration}} · {{pace}}",
+      "pace.under": "Abaixo do ritmo",
+      "pace.over": "Acima do ritmo",
+      "pace.even": "No ritmo",
+      "loading": "Carregando…",
+      "error": "Não foi possível carregar o uso.",
+      "error.stale": "Não foi possível atualizar.",
+      "retry": "Tentar novamente",
+      "empty.title": "Nenhuma assinatura Go conectada",
+      "empty.body": "Conecte o OpenCode Go para ver o uso.",
+      "empty.console": "Abrir console",
+      "footer.now": "Agora mesmo",
+      "footer.agoMinutes": "há {{count}} min",
+      "footer.refresh": "Atualizar",
+      "footer.refreshing": "Atualizando…",
+      "footer.refreshIn": "Disponível em {{seconds}} s",
+      "footer.console": "Console ↗",
+      "close": "Fechar",
+      "settings.open": "Configurações de posição",
+      "settings.title": "Posição",
+      "settings.description": "Escolha onde o indicador aparece.",
+      "settings.saved": "Posição atualizada",
+      "settings.footer.label": "Ao lado de Atualizar",
+      "settings.footer.description": "O mesmo espaço do botão Atualizar: rodapé da barra lateral em abas laterais, fim da barra de abas em abas superiores.",
+      "settings.header.label": "Cabeçalho da sessão",
+      "settings.header.description": "Ao lado dos controles de contexto.",
+      "settings.sidebar.label": "Cabeçalho da barra lateral",
+      "settings.sidebar.description": "Ao lado do botão da barra lateral.",
+      "settings.unavailable": "Não disponível neste layout.",
+      "duration.days": "{{days}} d {{hours}} h",
+      "duration.hours": "{{hours}} h {{minutes}} min",
+      "duration.minutes": "{{minutes}} min",
+    },
+    it: {
+      "pill.label": "Utilizzo Go",
+      "pill.title": "Utilizzo di OpenCode Go",
+      "panel.title": "OpenCode Go",
+      "panel.workspace": "Area di lavoro",
+      "window.rolling": "5 ore",
+      "window.weekly": "Settimanale",
+      "window.monthly": "Mensile",
+      "row.remaining": "{{percent}}% rimanente",
+      "row.reset": "Ripristino tra {{duration}} · {{time}}",
+      "row.resetNow": "Ripristino in corso",
+      "row.limited": "Limite raggiunto",
+      "row.windowLeft": "{{percent}}% della finestra rimanente · ripristino tra {{duration}} · {{pace}}",
+      "pace.under": "Sotto il ritmo",
+      "pace.over": "Sopra il ritmo",
+      "pace.even": "In linea",
+      "loading": "Caricamento…",
+      "error": "Impossibile caricare l’utilizzo.",
+      "error.stale": "Impossibile aggiornare.",
+      "retry": "Riprova",
+      "empty.title": "Nessun abbonamento Go connesso",
+      "empty.body": "Connetti OpenCode Go per vedere l’utilizzo.",
+      "empty.console": "Apri console",
+      "footer.now": "Adesso",
+      "footer.agoMinutes": "{{count}} min fa",
+      "footer.refresh": "Aggiorna",
+      "footer.refreshing": "Aggiornamento…",
+      "footer.refreshIn": "Disponibile tra {{seconds}} s",
+      "footer.console": "Console ↗",
+      "close": "Chiudi",
+      "settings.open": "Impostazioni posizione",
+      "settings.title": "Posizione",
+      "settings.description": "Scegli dove appare l’indicatore.",
+      "settings.saved": "Posizione aggiornata",
+      "settings.footer.label": "Accanto ad Aggiorna",
+      "settings.footer.description": "Lo stesso spazio del pulsante Aggiorna: piè di pagina della barra laterale nelle schede laterali, fine della barra delle schede nelle schede superiori.",
+      "settings.header.label": "Intestazione sessione",
+      "settings.header.description": "Accanto ai controlli di contesto.",
+      "settings.sidebar.label": "Intestazione barra laterale",
+      "settings.sidebar.description": "Accanto al pulsante della barra laterale.",
+      "settings.unavailable": "Non disponibile in questo layout.",
+      "duration.days": "{{days}} g {{hours}} h",
+      "duration.hours": "{{hours}} h {{minutes}} min",
+      "duration.minutes": "{{minutes}} min",
+    },
+    ja: {
+      "pill.label": "Go 使用量",
+      "pill.title": "OpenCode Go の使用量",
+      "panel.title": "OpenCode Go",
+      "panel.workspace": "ワークスペース",
+      "window.rolling": "5時間",
+      "window.weekly": "週間",
+      "window.monthly": "月間",
+      "row.remaining": "残り {{percent}}%",
+      "row.reset": "{{duration}}後にリセット · {{time}}",
+      "row.resetNow": "まもなくリセット",
+      "row.limited": "上限に達しました",
+      "row.windowLeft": "期間の残り {{percent}}% · {{duration}}後にリセット · {{pace}}",
+      "pace.under": "ペースを下回っています",
+      "pace.over": "ペースを上回っています",
+      "pace.even": "ペースどおり",
+      "loading": "読み込み中…",
+      "error": "使用量を読み込めませんでした。",
+      "error.stale": "更新できませんでした。",
+      "retry": "再試行",
+      "empty.title": "Go サブスクリプションが接続されていません",
+      "empty.body": "OpenCode Go を接続すると使用量が表示されます。",
+      "empty.console": "コンソールを開く",
+      "footer.now": "たった今",
+      "footer.agoMinutes": "{{count}}分前",
+      "footer.refresh": "更新",
+      "footer.refreshing": "更新中…",
+      "footer.refreshIn": "{{seconds}}秒後に利用可能",
+      "footer.console": "コンソール ↗",
+      "close": "閉じる",
+      "settings.open": "位置設定",
+      "settings.title": "位置",
+      "settings.description": "表示位置を選択してください。",
+      "settings.saved": "位置を更新しました",
+      "settings.footer.label": "更新の隣",
+      "settings.footer.description": "更新ボタンと同じ場所: サイドタブではサイドバーの下部、上部タブではタブバーの末尾。",
+      "settings.header.label": "セッションヘッダー",
+      "settings.header.description": "コンテキストコントロールの隣。",
+      "settings.sidebar.label": "サイドバーヘッダー",
+      "settings.sidebar.description": "サイドバー切り替えの隣。",
+      "settings.unavailable": "このレイアウトでは利用できません。",
+      "duration.days": "{{days}}日 {{hours}}時間",
+      "duration.hours": "{{hours}}時間{{minutes}}分",
+      "duration.minutes": "{{minutes}}分",
+    },
+    zh: {
+      "pill.label": "Go 用量",
+      "pill.title": "OpenCode Go 用量",
+      "panel.title": "OpenCode Go",
+      "panel.workspace": "工作区",
+      "window.rolling": "5 小时",
+      "window.weekly": "每周",
+      "window.monthly": "每月",
+      "row.remaining": "剩余 {{percent}}%",
+      "row.reset": "{{duration}}后重置 · {{time}}",
+      "row.resetNow": "即将重置",
+      "row.limited": "已达上限",
+      "row.windowLeft": "窗口剩余 {{percent}}% · {{duration}}后重置 · {{pace}}",
+      "pace.under": "低于节奏",
+      "pace.over": "高于节奏",
+      "pace.even": "符合节奏",
+      "loading": "加载中…",
+      "error": "无法加载用量。",
+      "error.stale": "无法刷新。",
+      "retry": "重试",
+      "empty.title": "未连接 Go 订阅",
+      "empty.body": "连接 OpenCode Go 以查看用量。",
+      "empty.console": "打开控制台",
+      "footer.now": "刚刚",
+      "footer.agoMinutes": "{{count}} 分钟前",
+      "footer.refresh": "刷新",
+      "footer.refreshing": "正在刷新…",
+      "footer.refreshIn": "{{seconds}} 秒后可用",
+      "footer.console": "控制台 ↗",
+      "close": "关闭",
+      "settings.open": "位置设置",
+      "settings.title": "位置",
+      "settings.description": "选择显示位置。",
+      "settings.saved": "位置已更新",
+      "settings.footer.label": "更新按钮旁",
+      "settings.footer.description": "与更新按钮相同的位置：侧边标签页中位于侧边栏底部，顶部标签页中位于标签栏末尾。",
+      "settings.header.label": "会话标题栏",
+      "settings.header.description": "位于上下文控件旁。",
+      "settings.sidebar.label": "侧边栏标题栏",
+      "settings.sidebar.description": "位于侧边栏切换按钮旁。",
+      "settings.unavailable": "此布局中不可用。",
+      "duration.days": "{{days}} 天 {{hours}} 小时",
+      "duration.hours": "{{hours}} 小时 {{minutes}} 分钟",
+      "duration.minutes": "{{minutes}} 分钟",
     },
   },
 })
@@ -111,22 +418,27 @@ const WINDOWS: { key: WindowKey; label: string }[] = [
   { key: "monthly", label: "window.monthly" },
 ]
 
-function clock(ms: number) {
+function clock(ms: number, locale?: string) {
   const date = new Date(ms)
   const today = new Date()
   const sameDay = date.toDateString() === today.toDateString()
-  return new Intl.DateTimeFormat(undefined, sameDay
+  return new Intl.DateTimeFormat(locale, sameDay
     ? { hour: "2-digit", minute: "2-digit" }
     : { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(date)
 }
 
-function fullDate(ms: number) {
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(ms))
+function fullDate(ms: number, locale?: string) {
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(ms))
 }
 
 function findPill(label: string) {
   return Array.from(document.querySelectorAll<HTMLButtonElement>('[data-slot="titlebar-update"] button'))
     .find((button) => button.getAttribute("aria-label") === label)
+}
+
+function findTrigger(placement: EffectivePlacement, label: string) {
+  if (placement === "footer" || placement === "titlebar") return findPill(label)
+  return document.querySelector<HTMLElement>(`[data-ogu-trigger="${placement}"]`)
 }
 
 type Translate = (key: string, params?: Params) => string
@@ -140,10 +452,10 @@ function durationText(t: Translate, ms: number) {
   return t("duration.minutes", { minutes })
 }
 
-function resetText(t: Translate, meter: Meter, now: number) {
+function resetText(t: Translate, meter: Meter, now: number, locale?: string) {
   const resetIn = meter.resetsAt - now
   if (resetIn <= 0) return t("row.resetNow")
-  return t("row.reset", { duration: durationText(t, resetIn), time: clock(meter.resetsAt) })
+  return t("row.reset", { duration: durationText(t, resetIn), time: clock(meter.resetsAt, locale) })
 }
 
 function UsageRow(props: {
@@ -187,9 +499,9 @@ function UsageRow(props: {
         <span
           class="ogu-reset"
           classList={{ "ogu-reset-hidden": props.hideResets() }}
-          title={fullDate(props.meter.resetsAt)}
+          title={fullDate(props.meter.resetsAt, ctx.locale.locale())}
         >
-          {resetText(ctx.t, props.meter, props.now())}
+          {resetText(ctx.t, props.meter, props.now(), ctx.locale.locale())}
         </span>
         <Show when={props.meter.limited}>
           <span class="ogu-badge">{ctx.t("row.limited")}</span>
@@ -217,7 +529,175 @@ function UsageRow(props: {
   )
 }
 
-function UsagePanel(props: { open: Accessor<boolean>; onClose: () => void }) {
+function HeaderTrigger(props: {
+  active: Accessor<boolean>
+  open: Accessor<boolean>
+  toggle: () => void
+}) {
+  const ctx = usePlugin<typeof definition>()
+
+  return (
+    <Show when={props.active()}>
+      <button
+        type="button"
+        class="ogu-trigger"
+        data-ogu-trigger="header"
+        aria-label={ctx.t("pill.title")}
+        aria-pressed={props.open()}
+        title={ctx.t("pill.title")}
+        onClick={props.toggle}
+      >
+        <ctx.ui.Icon name={ctx.icons.gauge} size="small" />
+      </button>
+    </Show>
+  )
+}
+
+function InjectedTrigger(props: {
+  placement: "sidebar"
+  active: Accessor<boolean>
+  open: Accessor<boolean>
+  toggle: () => void
+}) {
+  const ctx = usePlugin<typeof definition>()
+
+  let button: HTMLButtonElement | undefined
+  let target: HTMLElement | undefined
+  let observer: MutationObserver | undefined
+  let frame = 0
+
+  const visible = (element: Element | null): element is HTMLElement => {
+    if (!(element instanceof HTMLElement)) return false
+    const box = element.getBoundingClientRect()
+    return box.width > 0 && box.height > 0 && element.checkVisibility?.() !== false
+  }
+
+  const findTarget = () => {
+    const labels = [ctx.t("command.sidebar.toggle"), ctx.t("command.sidebar.toggle.unread")]
+    return Array.from(document.querySelectorAll<HTMLButtonElement>("button[aria-label]"))
+      .find((element) => labels.includes(element.getAttribute("aria-label") ?? "") && visible(element))
+  }
+
+  const update = () => {
+    if (!button) return
+    button.setAttribute("aria-label", ctx.t("pill.title"))
+    button.setAttribute("aria-pressed", String(props.open()))
+    button.title = ctx.t("pill.title")
+  }
+
+  const remove = () => {
+    button?.remove()
+    button = undefined
+    target = undefined
+  }
+
+  const mount = () => {
+    const next = findTarget()
+    if (!next) {
+      remove()
+      return
+    }
+    if (button && target === next && button.parentElement) {
+      update()
+      return
+    }
+
+    remove()
+    button = document.createElement("button")
+    button.type = "button"
+    button.className = `ogu-trigger ogu-trigger-${props.placement}`
+    button.setAttribute("data-ogu-trigger", props.placement)
+    button.innerHTML = gauge
+    button.addEventListener("click", props.toggle)
+    update()
+
+    next.insertAdjacentElement("afterend", button)
+
+    target = next
+  }
+
+  const schedule = () => {
+    cancelAnimationFrame(frame)
+    frame = requestAnimationFrame(mount)
+  }
+
+  createEffect(() => {
+    if (!props.active()) {
+      observer?.disconnect()
+      observer = undefined
+      remove()
+      return
+    }
+
+    untrack(mount)
+    observer = new MutationObserver(schedule)
+    observer.observe(document.body, { childList: true, subtree: true })
+
+    onCleanup(() => {
+      cancelAnimationFrame(frame)
+      observer?.disconnect()
+      observer = undefined
+      remove()
+    })
+  })
+
+  createEffect(() => {
+    props.open()
+    ctx.t("pill.title")
+    update()
+  })
+
+  return null
+}
+
+function PlacementSettings(props: { hasSidebar: Accessor<boolean>; onChoose: (placement: Placement) => void }) {
+  const ctx = usePlugin<typeof definition>()
+
+  const available = (id: Placement) => id !== "sidebar" || props.hasSidebar()
+
+  return (
+    <div class="ogu-settings">
+      <For each={PLACEMENTS}>
+        {(item) => {
+          const selected = () => ctx.stores.prefs.value.placement === item.id
+          const enabled = () => available(item.id)
+
+          return (
+            <button
+              type="button"
+              class="ogu-option"
+              aria-pressed={selected()}
+              disabled={!enabled()}
+              title={enabled() ? undefined : ctx.t("settings.unavailable")}
+              onClick={() => enabled() && props.onChoose(item.id)}
+            >
+              <span class="ogu-option-copy">
+                <span class="ogu-option-label">{ctx.t(item.label)}</span>
+                <span class="ogu-option-description">
+                  {ctx.t(item.description)}
+                  <Show when={!enabled()}> {ctx.t("settings.unavailable")}</Show>
+                </span>
+              </span>
+              <Show when={selected()}>
+                <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+                  <path d="m3 7.2 2.6 2.6L11 4.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </Show>
+            </button>
+          )
+        }}
+      </For>
+    </div>
+  )
+}
+
+function UsagePanel(props: {
+  open: Accessor<boolean>
+  placement: Accessor<EffectivePlacement>
+  hasSidebar: Accessor<boolean>
+  onClose: () => void
+  onPlaced: () => void
+}) {
   const ctx = usePlugin<typeof definition>()
   const [limits, setLimits] = createSignal<Limits | null | undefined>(undefined)
   const [error, setError] = createSignal<string>()
@@ -227,6 +707,7 @@ function UsagePanel(props: { open: Accessor<boolean>; onClose: () => void }) {
   const [anchor, setAnchor] = createSignal<Anchor>()
   const [lastRequestAt, setLastRequestAt] = createSignal<number>()
   const [hideResets, setHideResets] = createSignal(false)
+  const [view, setView] = createSignal<"usage" | "settings">("usage")
 
   let panel: HTMLDivElement | undefined
   let samples: HTMLDivElement | undefined
@@ -266,6 +747,7 @@ function UsagePanel(props: { open: Accessor<boolean>; onClose: () => void }) {
   createEffect(() => {
     if (!props.open()) return
 
+    setView("usage")
     setNow(Date.now())
     untrack(() => void load("open"))
 
@@ -284,30 +766,70 @@ function UsagePanel(props: { open: Accessor<boolean>; onClose: () => void }) {
   })
 
   const measure = () => {
-    const sidebar = document.querySelector<HTMLElement>('aside[data-slot="vertical-tabs-sidebar"]')
-    const pill = findPill(ctx.t("pill.title"))
-    if (!sidebar || !pill) {
+    const kind = props.placement()
+    const trigger = findTrigger(kind, ctx.t("pill.title"))
+    if (!trigger) {
       setAnchor(undefined)
       return
     }
 
-    const box = sidebar.getBoundingClientRect()
-    const button = pill.getBoundingClientRect()
+    const button = trigger.getBoundingClientRect()
+    if (button.width === 0 || button.height === 0) {
+      setAnchor(undefined)
+      return
+    }
+
     const pad = 8
-    const width = box.width - pad * 2
-    const height = button.top - pad * 2
 
-    if (width < 120 || height < 80 || button.width === 0 || button.height === 0) {
-      setAnchor(undefined)
+    if (kind === "footer") {
+      const sidebar = document.querySelector<HTMLElement>('aside[data-slot="vertical-tabs-sidebar"]')
+      if (!sidebar) {
+        setAnchor(undefined)
+        return
+      }
+
+      const box = sidebar.getBoundingClientRect()
+      const width = box.width - pad * 2
+      const height = button.top - pad * 2
+      if (width < 120 || height < 80) {
+        setAnchor(undefined)
+        return
+      }
+
+      setAnchor({
+        left: box.left + pad,
+        width,
+        bottom: Math.max(pad, window.innerHeight - button.top + pad),
+        maxHeight: height,
+      })
       return
     }
 
-    setAnchor({
-      left: box.left + pad,
-      width,
-      bottom: Math.max(pad, window.innerHeight - button.top + pad),
-      maxHeight: height,
-    })
+    const width = Math.min(320, window.innerWidth - pad * 2)
+    let left: number
+
+    if (kind === "sidebar") {
+      const sidebar = document.querySelector<HTMLElement>('aside[data-slot="vertical-tabs-sidebar"]')
+      if (!sidebar) {
+        setAnchor(undefined)
+        return
+      }
+      left = sidebar.getBoundingClientRect().right + pad + 2
+    } else if (kind === "header") {
+      left = button.right - width + 10
+    } else {
+      left = button.right - width + 2
+    }
+
+    left = clamp(left, pad, window.innerWidth - width - pad)
+
+    const top = button.bottom + (kind === "titlebar" ? pad + 10 : kind === "sidebar" ? pad + 36 : pad)
+    const maxHeight = window.innerHeight - top - pad
+    if (maxHeight < 80) {
+      setAnchor(undefined)
+      return
+    }
+    setAnchor({ left, width, top, maxHeight })
   }
 
   const scheduleMeasure = () => {
@@ -321,20 +843,23 @@ function UsagePanel(props: { open: Accessor<boolean>; onClose: () => void }) {
       return
     }
 
+    props.placement()
     scheduleMeasure()
     window.addEventListener("resize", scheduleMeasure)
 
     const sidebar = document.querySelector<HTMLElement>('aside[data-slot="vertical-tabs-sidebar"]')
+    const trigger = findTrigger(props.placement(), ctx.t("pill.title"))
     const observer = new ResizeObserver(scheduleMeasure)
     if (sidebar) observer.observe(sidebar)
-    const pill = findPill(ctx.t("pill.title"))
-    if (pill) observer.observe(pill)
+    if (trigger) observer.observe(trigger)
 
+    const recheck = window.setInterval(scheduleMeasure, 1_000)
     const focus = requestAnimationFrame(() => panel?.focus({ preventScroll: true }))
 
     onCleanup(() => {
       cancelAnimationFrame(frame)
       cancelAnimationFrame(focus)
+      window.clearInterval(recheck)
       window.removeEventListener("resize", scheduleMeasure)
       observer.disconnect()
     })
@@ -350,7 +875,7 @@ function UsagePanel(props: { open: Accessor<boolean>; onClose: () => void }) {
     }))
   })
 
-  const resetTexts = createMemo(() => rows().map((row) => resetText(ctx.t, row.meter, now())))
+  const resetTexts = createMemo(() => rows().map((row) => resetText(ctx.t, row.meter, now(), ctx.locale.locale())))
 
   const measureResets = () => {
     if (!samples) return
@@ -392,6 +917,15 @@ function UsagePanel(props: { open: Accessor<boolean>; onClose: () => void }) {
     ctx.system.openExternal(limits()?.workspace.usageURL ?? "https://opencode.ai/console")
   }
 
+  const choose = (next: Placement) => {
+    ctx.stores.prefs.update((draft) => {
+      draft.placement = next
+    })
+    ctx.toast.show({ title: ctx.t("settings.saved"), variant: "success" })
+    props.onClose()
+    props.onPlaced()
+  }
+
   return (
     <Show when={props.open() && anchor()}>
       <Portal>
@@ -403,33 +937,51 @@ function UsagePanel(props: { open: Accessor<boolean>; onClose: () => void }) {
           aria-label={ctx.t("pill.title")}
           tabindex="-1"
           style={anchor()
-            ? `left:${anchor()!.left}px;width:${anchor()!.width}px;bottom:${anchor()!.bottom}px;max-height:${anchor()!.maxHeight}px`
+            ? `left:${anchor()!.left}px;width:${anchor()!.width}px;${anchor()!.top !== undefined ? `top:${anchor()!.top}px` : `bottom:${anchor()!.bottom}px`};max-height:${anchor()!.maxHeight}px`
             : undefined}
         >
           <div class="ogu-head">
             <div style={{ "min-width": 0, flex: 1 }}>
-              <div class="ogu-title">{ctx.t("panel.title")}</div>
-              <Show when={limits()}>
+              <div class="ogu-title">
+                {view() === "settings" ? ctx.t("settings.title") : ctx.t("panel.title")}
+              </div>
+              <Show when={view() === "settings"}>
+                <div class="ogu-sub">{ctx.t("settings.description")}</div>
+              </Show>
+              <Show when={view() === "usage" && limits()}>
                 <div class="ogu-sub">
                   {limits()!.workspace.name || ctx.t("panel.workspace")}
                   <Show when={ago()}> · {ago()}</Show>
                 </div>
               </Show>
             </div>
-            <button
-              type="button"
-              class="ogu-close"
-              aria-label={ctx.t("close")}
-              title={ctx.t("close")}
-              onClick={props.onClose}
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-                <path d="M3.5 3.5 10.5 10.5M10.5 3.5 3.5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-              </svg>
-            </button>
+            <div class="ogu-head-actions">
+              <button
+                type="button"
+                class="ogu-close"
+                aria-label={ctx.t("settings.open")}
+                aria-pressed={view() === "settings"}
+                title={ctx.t("settings.open")}
+                onClick={() => setView(view() === "settings" ? "usage" : "settings")}
+              >
+                <ctx.ui.Icon name="sliders" size="small" />
+              </button>
+              <button
+                type="button"
+                class="ogu-close"
+                aria-label={ctx.t("close")}
+                title={ctx.t("close")}
+                onClick={props.onClose}
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+                  <path d="M3.5 3.5 10.5 10.5M10.5 3.5 3.5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                </svg>
+              </button>
+            </div>
           </div>
 
-          <div class="ogu-body">
+          <Show when={view() === "usage"} fallback={<PlacementSettings hasSidebar={props.hasSidebar} onChoose={choose} />}>
+            <div class="ogu-body">
             <Show when={limits() === undefined && !error()}>
               <div class="ogu-note">{ctx.t("loading")}</div>
             </Show>
@@ -499,6 +1051,7 @@ function UsagePanel(props: { open: Accessor<boolean>; onClose: () => void }) {
               </div>
             </div>
           </Show>
+          </Show>
 
           <div ref={(element) => (samples = element)} class="ogu-reset-samples" aria-hidden="true">
             <For each={resetTexts()}>{(text) => <span class="ogu-reset-sample">{text}</span>}</For>
@@ -513,26 +1066,133 @@ export default Plugin.define({
   ...definition,
   setup(ctx) {
     const [open, setOpen] = createSignal(false)
+    const [hasSidebar, setHasSidebar] = createSignal(
+      (document.querySelector<HTMLElement>('aside[data-slot="vertical-tabs-sidebar"]')?.getBoundingClientRect().width ?? 0) > 0,
+    )
+    const [hasSession, setHasSession] = createSignal(!!ctx.sessions.current())
+
+    createEffect(() => {
+      setHasSession(!!ctx.sessions.current())
+    })
+
+    let layoutFrame = 0
+    const checkLayout = () => {
+      cancelAnimationFrame(layoutFrame)
+      layoutFrame = requestAnimationFrame(() => {
+        const width = document.querySelector<HTMLElement>('aside[data-slot="vertical-tabs-sidebar"]')
+          ?.getBoundingClientRect().width ?? 0
+        setHasSidebar(width > 0)
+      })
+    }
+    const layoutObserver = new MutationObserver(checkLayout)
+    layoutObserver.observe(document.body, { childList: true, subtree: true })
+    onCleanup(() => {
+      layoutObserver.disconnect()
+      cancelAnimationFrame(layoutFrame)
+    })
+
+    const placement = () => ctx.stores.prefs.value.placement
+    const effective = (): EffectivePlacement => effectivePlacement(placement(), hasSidebar(), hasSession())
+
+    createEffect(() => {
+      if (!hasSidebar() && placement() === "sidebar") {
+        ctx.stores.prefs.update((draft) => {
+          draft.placement = "footer"
+        })
+      }
+    })
+
+    let reopenAfterSettings = false
+    createEffect(() => {
+      if (ctx.router.path().startsWith("/settings")) {
+        if (open()) {
+          reopenAfterSettings = true
+          setOpen(false)
+        }
+        return
+      }
+
+      if (reopenAfterSettings) {
+        reopenAfterSettings = false
+        setOpen(true)
+      }
+    })
+
+    const focusTrigger = () => {
+      const trigger = findTrigger(effective(), ctx.t("pill.title"))
+      ;(trigger ?? findPill(ctx.t("pill.title")))?.focus()
+    }
+
+    let flashFrame = 0
+    let flashTimer = 0
+    const flash = () => {
+      cancelAnimationFrame(flashFrame)
+      window.clearTimeout(flashTimer)
+
+      const label = ctx.t("pill.title")
+      let tries = 0
+      const apply = () => {
+        const trigger = findTrigger(effective(), label)
+        if (!trigger) {
+          if (tries++ < 30) flashFrame = requestAnimationFrame(apply)
+          return
+        }
+        trigger.classList.remove("ogu-attention")
+        void trigger.offsetWidth
+        trigger.classList.add("ogu-attention")
+        flashTimer = window.setTimeout(() => trigger.classList.remove("ogu-attention"), 2_600)
+      }
+      flashFrame = requestAnimationFrame(apply)
+    }
+
+    onCleanup(() => {
+      cancelAnimationFrame(flashFrame)
+      window.clearTimeout(flashTimer)
+    })
 
     const close = () => {
       setOpen(false)
-      queueMicrotask(() => findPill(ctx.t("pill.title"))?.focus())
+      queueMicrotask(focusTrigger)
     }
+
+    const toggle = () => (open() ? close() : setOpen(true))
 
     ctx.add(Style, css)
 
-    ctx.add(TitlebarItem, () => ({
-      id: "usage",
-      label: ctx.t("pill.label"),
-      title: ctx.t("pill.title"),
-      icon: ctx.icons.gauge,
-      pressed: open(),
-      run: () => (open() ? close() : setOpen(true)),
-    }))
+    ctx.add(TitlebarItem, () => {
+      const at = effective()
+      if (at !== "footer" && at !== "titlebar") return undefined
+
+      return {
+        id: "usage",
+        label: ctx.t("pill.label"),
+        title: ctx.t("pill.title"),
+        icon: ctx.icons.gauge,
+        pressed: open(),
+        run: toggle,
+      }
+    })
+
+    ctx.add(Slot, {
+      at: "session.header",
+      order: 30,
+      render: (input) => (
+        <HeaderTrigger
+          active={() => input.active && effective() === "header"}
+          open={open}
+          toggle={toggle}
+        />
+      ),
+    })
 
     ctx.add(Slot, {
       at: "window.bottom",
-      render: () => <UsagePanel open={open} onClose={close} />,
+      render: () => (
+        <>
+          <UsagePanel open={open} placement={effective} hasSidebar={hasSidebar} onClose={close} onPlaced={flash} />
+          <InjectedTrigger placement="sidebar" active={() => effective() === "sidebar"} open={open} toggle={toggle} />
+        </>
+      ),
     })
   },
 })

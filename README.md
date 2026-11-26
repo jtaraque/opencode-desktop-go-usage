@@ -6,19 +6,19 @@
 A small OpenCode Desktop plugin that shows your OpenCode Go allowance in the sidebar: the rolling 5-hour, weekly and monthly windows, what is left, when each one resets, and how your usage compares with the time left in the window.
 
 <p align="center">
-  <img src="docs/panel.png" alt="OpenCode Go usage panel above the usage pill" width="280">
+  <img src="docs/panel.png" alt="OpenCode Go usage panel with the position settings button" width="320">
   <br>
   <sub>Screenshot from the English UI.</sub>
 </p>
 
 ## Features
 
-- A gauge pill in the sidebar footer, above the update pill.
-- A floating panel that opens upward and stays inside the sidebar.
+- A gauge pill you can place next to the update button, in the session header or in the sidebar header.
+- A floating panel anchored to the pill. It may overlap the chat while open.
 - 5-hour, weekly and monthly allowance with remaining percentage and reset countdown.
 - A vertical marker for the time left in each window, plus a tooltip with the pace: `Under pace`, `On pace` or `Over pace`.
 - Manual refresh with a one-minute cooldown and automatic refresh every 5 minutes while the panel is open. Opening the panel requests at most once per minute.
-- Spanish and English copy, light and dark themes.
+- Spanish, English, German, French, Portuguese (Brazil), Italian, Japanese and Simplified Chinese copy; light and dark themes.
 - Read-only display: the plugin reads the local OpenCode server and opens the Console only when you ask it to.
 
 The plugin follows the app language. The labels below use the English copy.
@@ -27,7 +27,7 @@ The plugin follows the app language. The labels below use the English copy.
 
 - OpenCode Desktop 2.4.x with GUI plugin support. Tested with 2.4.1.
 - An OpenCode Go subscription connected to the workspace.
-- The vertical-tabs layout (the sidebar layout). Other layouts are on the roadmap.
+- Side tabs, top tabs and Inbox are supported. The sidebar-header placement needs a sidebar (side tabs or Inbox); the update-button placement works in all three layouts.
 - Windows was tested; macOS and Linux are expected to work but have not been tested by the author.
 
 ## Installation
@@ -59,13 +59,16 @@ Remove the entry from `opencode.json(c)`, reload the window, and delete the clon
 
 ## Usage
 
-1. Look for the gauge pill in the bottom-left sidebar footer, above the OpenCode update pill.
-2. Click it to open the panel. It opens upward and stays inside the sidebar, over the session list.
+1. Look for the gauge pill in the place you chose: next to the update button, in the session header or in the sidebar header.
+2. Click it to open the panel. Header placements open downward; the update-button placement opens upward in side tabs and Inbox, and downward in top tabs.
 3. Read each window: the bar shows the allowance left, the vertical line shows the time left, and the tooltip compares both.
-4. Close it with the pill or the **X**. Clicking outside and pressing Escape do not close it.
-5. Use **Refresh** to refresh immediately or **Console ↗** to open the usage page in the OpenCode Console. The refresh button is disabled for one minute after a request.
+4. Click the sliders button in the panel header to open **Position**. Pick one of the three placements; unavailable choices are disabled. The panel closes and the pill reappears in the new place with a short pulse so you can spot it.
+5. Close the panel with the pill or the **X**. Clicking outside and pressing Escape do not close it.
+6. Use **Refresh** to refresh immediately or **Console ↗** to open the usage page in the OpenCode Console. The refresh button is disabled for one minute after a request.
 
-The panel follows the sidebar width. On a narrow sidebar the rows wrap, the header summary hides and the footer buttons stack. All three reset lines hide together as soon as the longest one would wrap to a second line; the bar tooltip still shows each reset. If the available height above the pill is short, the panel scrolls instead of overflowing above the sidebar.
+In top tabs, the sidebar-header placement is disabled. The update-button placement uses the end of the tab strip. In Inbox, all three placements are available.
+
+In the sidebar footer the panel follows the sidebar width. In the header and sidebar-header placements it is a 320 px floating panel and may overlap the chat. On a narrow panel the rows wrap, the header summary hides and the footer buttons stack. All three reset lines hide together as soon as the longest one would wrap to a second line; the bar tooltip still shows each reset. If the available height above or below the pill is short, the panel scrolls instead of overflowing the viewport.
 
 The five-hour window starts when you first use the allowance and lasts five hours. The weekly window resets on Monday at 00:00 UTC. The monthly window resets when a new paid period starts.
 
@@ -88,6 +91,12 @@ The panel only requests data while it is open. Opening it again within a minute 
 | 2.4.x | Supported; tested with 2.4.1 |
 | Other versions | Not tested |
 
+| Layout | Placements |
+| --- | --- |
+| Side tabs | All three |
+| Top tabs | Next to update and session header; sidebar header is disabled |
+| Inbox | All three |
+
 The GUI plugin API is experimental. A future OpenCode release may change it; check the releases page before updating if the pill stops loading.
 
 ## Troubleshooting
@@ -96,7 +105,7 @@ The GUI plugin API is experimental. A future OpenCode release may change it; che
 
 - Confirm the plugin is listed in **Settings → Extensions → Plugins**.
 - Run `opencode plugin list` and check that the plugin is active.
-- Confirm you are using the vertical-tabs layout. Version 0.1 anchors the panel to the sidebar footer.
+- The sidebar-header placement needs a sidebar; in top tabs it is disabled. The update-button placement works in every layout.
 - Reload the window.
 
 **`opencode plugin add github:…` fails with `git dep preparation failed`**

@@ -72,17 +72,21 @@ Manual checks before a UI pull request:
 2. Confirm the three rows show a remaining percentage, a reset countdown and a marker.
 3. Hover anywhere on a bar and confirm the tooltip includes the window percentage, the reset and the pace.
 4. Resize the window and the sidebar; the panel should stay inside the sidebar.
-5. Try both light and dark themes, and a display scale of 125% or 150%.
-6. Try Spanish and English.
-7. Simulate a failed request and confirm **Retry** works, then restore the connection.
-8. Narrow the sidebar until the longest reset line would wrap; confirm all reset lines hide together and the bar tooltip still shows each reset.
-9. Open, close and reopen within a minute; the timestamp should continue instead of resetting.
+5. Open **Position** with the sliders button and try every available placement; the pill should pulse after each change.
+6. In top tabs, confirm the sidebar-header option is disabled and the update-button pill uses the tab strip.
+7. Confirm the session-header pill sits left of the context controls.
+8. Open OpenCode settings while the panel is open; it should close, then reopen on return.
+9. Try both light and dark themes, and a display scale of 125% or 150%.
+10. Try each interface language: Spanish, English, German, French, Portuguese (Brazil), Italian, Japanese and Simplified Chinese.
+11. Simulate a failed request and confirm **Retry** works, then restore the connection.
+12. Narrow the sidebar until the longest reset line would wrap; confirm all reset lines hide together and the bar tooltip still shows each reset.
+13. Open, close and reopen within a minute; the timestamp should continue instead of resetting.
 
 The panel uses the local OpenCode server. Do not include a real workspace ID, token or API key in an issue or a screenshot.
 
 ## Adding a translation
 
-Translations live in the `i18n` object in `src/gui.tsx`. Add a locale under `es`/`en` with every key, and keep the `{{placeholders}}` unchanged. The app falls back to English for missing keys. Update the roadmap when a locale is ready.
+Translations live in the `i18n` object in `src/gui.tsx`. Add a locale with every key and keep the `{{placeholders}}` unchanged. Use the app's locale id: `br` is Portuguese (Brazil) and `zh` is Simplified Chinese. The app falls back to English for missing keys. Update the roadmap when a locale is ready.
 
 ## Pull requests
 

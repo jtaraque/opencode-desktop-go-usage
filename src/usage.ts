@@ -2,6 +2,10 @@ export type WindowKey = "rolling" | "weekly" | "monthly"
 
 export type Pace = "under" | "even" | "over"
 
+export type Placement = "footer" | "header" | "sidebar"
+
+export type EffectivePlacement = Placement | "titlebar"
+
 const HOUR = 60 * 60 * 1_000
 const DAY = 24 * HOUR
 const PACING_SLACK = 3
@@ -53,4 +57,15 @@ export function paceOf(remaining: number, windowLeft: number | undefined): Pace 
 export function cooldownLeft(lastAt: number | undefined, now: number, cooldown: number) {
   if (!lastAt || !Number.isFinite(lastAt) || !Number.isFinite(now) || cooldown <= 0) return 0
   return Math.max(0, cooldown - (now - lastAt))
+}
+
+export function effectivePlacement(
+  selected: Placement,
+  hasSidebar: boolean,
+  hasSession: boolean,
+): EffectivePlacement {
+  if (selected === "footer") return hasSidebar ? "footer" : "titlebar"
+  if (selected === "sidebar") return hasSidebar ? "sidebar" : "titlebar"
+  if (selected === "header") return hasSession ? "header" : hasSidebar ? "footer" : "titlebar"
+  return "footer"
 }

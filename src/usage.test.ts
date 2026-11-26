@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { clamp, cooldownLeft, paceOf, remainingPercent, startOfWindow, windowLeft } from "./usage"
+import { clamp, cooldownLeft, effectivePlacement, paceOf, remainingPercent, startOfWindow, windowLeft } from "./usage"
 
 const HOUR = 60 * 60 * 1_000
 const DAY = 24 * HOUR
@@ -113,5 +113,32 @@ describe("cooldownLeft", () => {
   it("ignores invalid timestamps", () => {
     expect(cooldownLeft(Number.NaN, now, 30_000)).toBe(0)
     expect(cooldownLeft(now - 10_000, Number.NaN, 30_000)).toBe(0)
+  })
+})
+
+describe("effectivePlacement", () => {
+  it("keeps footer and sidebar in sidebar tabs", () => {
+    expect(effectivePlacement("footer", true, true)).toBe("footer")
+    expect(effectivePlacement("sidebar", true, true)).toBe("sidebar")
+  })
+
+  it("keeps the footer at the end of the tab strip in top tabs", () => {
+    expect(effectivePlacement("footer", false, true)).toBe("titlebar")
+    expect(effectivePlacement("footer", false, false)).toBe("titlebar")
+  })
+
+  it("does not use the sidebar header in top tabs", () => {
+    expect(effectivePlacement("sidebar", false, true)).toBe("titlebar")
+    expect(effectivePlacement("sidebar", false, false)).toBe("titlebar")
+  })
+
+  it("falls back to the titlebar without a session", () => {
+    expect(effectivePlacement("header", false, false)).toBe("titlebar")
+    expect(effectivePlacement("header", true, false)).toBe("footer")
+  })
+
+  it("keeps the session header with a session", () => {
+    expect(effectivePlacement("header", false, true)).toBe("header")
+    expect(effectivePlacement("header", true, true)).toBe("header")
   })
 })
