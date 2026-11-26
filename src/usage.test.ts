@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { applyOffset, clamp, cooldownLeft, effectivePlacement, headerRightOf, SESSION_HEADER_SELECTOR, offsetKey, paceOf, remainingPercent, startOfWindow, windowLeft } from "./usage"
+import { applyOffset, clamp, cooldownLeft, effectivePlacement, headerRightOf, SESSION_HEADER_SELECTOR, SESSION_SUMMARY_SELECTOR, rectsOverlap, summaryVisible, offsetKey, paceOf, remainingPercent, startOfWindow, windowLeft } from "./usage"
 
 const HOUR = 60 * 60 * 1_000
 const DAY = 24 * HOUR
@@ -169,6 +169,48 @@ describe("headerRightOf", () => {
   it("returns undefined when the trigger or the header is missing", () => {
     expect(headerRightOf(null)).toBeUndefined()
     expect(headerRightOf({ closest: () => null })).toBeUndefined()
+  })
+})
+
+describe("summaryVisible", () => {
+  it("ignores missing and hidden elements", () => {
+    expect(summaryVisible(null)).toBe(false)
+    expect(summaryVisible({ getClientRects: () => ({ length: 0 }) })).toBe(false)
+    expect(summaryVisible({ getClientRects: () => ({ length: 1 }), checkVisibility: () => false })).toBe(false)
+  })
+
+  it("accepts a visible element", () => {
+    expect(summaryVisible({ getClientRects: () => ({ length: 1 }) })).toBe(true)
+    expect(summaryVisible({ getClientRects: () => ({ length: 1 }), checkVisibility: () => true })).toBe(true)
+  })
+
+  it("uses the session summary selector and data-slot fallbacks", () => {
+    expect(SESSION_SUMMARY_SELECTOR).toContain(".session-summary-popover")
+    expect(SESSION_SUMMARY_SELECTOR).toContain('[data-slot="session-summary"]')
+    expect(SESSION_SUMMARY_SELECTOR).toContain('[data-slot="session-summary-popover"]')
+  })
+})
+
+describe("rectsOverlap", () => {
+  const panel = { left: 100, top: 100, right: 420, bottom: 400 }
+
+  it("detects overlapping rectangles", () => {
+    expect(rectsOverlap(panel, { left: 300, top: 120, right: 600, bottom: 300 })).toBe(true)
+  })
+
+  it("keeps separated rectangles apart", () => {
+    expect(rectsOverlap(panel, { left: 500, top: 120, right: 800, bottom: 300 })).toBe(false)
+    expect(rectsOverlap(panel, { left: 120, top: 500, right: 300, bottom: 700 })).toBe(false)
+  })
+
+  it("treats touching edges as separated", () => {
+    expect(rectsOverlap(panel, { left: 420, top: 100, right: 700, bottom: 400 })).toBe(false)
+    expect(rectsOverlap(panel, { left: 100, top: 400, right: 420, bottom: 700 })).toBe(false)
+  })
+
+  it("ignores missing rectangles", () => {
+    expect(rectsOverlap(panel, null)).toBe(false)
+    expect(rectsOverlap(undefined, { left: 0, top: 0, right: 1, bottom: 1 })).toBe(false)
   })
 })
 

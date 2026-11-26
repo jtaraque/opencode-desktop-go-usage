@@ -2,7 +2,7 @@ import { createEffect, createMemo, createSignal, For, onCleanup, Show, untrack, 
 import { Portal } from "solid-js/web"
 import { Plugin, Slot, Store, Style, TitlebarItem, usePlugin, type Params } from "@opencode/plugin/gui"
 import { Schema } from "effect"
-import { applyOffset, clamp, cooldownLeft, effectivePlacement, headerRightOf, offsetKey, paceOf, remainingPercent, windowLeft, type BaseAnchor, type EffectivePlacement, type PanelLayout, type PanelOffset, type Placement, type WindowKey } from "./usage"
+import { applyOffset, clamp, cooldownLeft, effectivePlacement, headerRightOf, offsetKey, paceOf, rectsOverlap, remainingPercent, SESSION_SUMMARY_SELECTOR, summaryVisible, windowLeft, type BaseAnchor, type EffectivePlacement, type PanelLayout, type PanelOffset, type Placement, type WindowKey } from "./usage"
 import gauge from "./icons/gauge.svg?raw"
 import css from "./style.css?inline"
 
@@ -1355,6 +1355,46 @@ export default Plugin.define({
       }
     })
 
+    let reopenAfterSummary = false
+    let lastPanelRect: DOMRect | undefined
+    const summaryElement = () => {
+      const element = document.querySelector<HTMLElement>(SESSION_SUMMARY_SELECTOR)
+      return summaryVisible(element) ? element : undefined
+    }
+    const panelElement = () => document.querySelector<HTMLElement>(".ogu-panel")
+    const syncSummary = () => {
+      const summary = summaryElement()
+      const usage = panelElement()
+      if (usage) lastPanelRect = usage.getBoundingClientRect()
+
+      if (summary) {
+        if (open() && usage && rectsOverlap(usage.getBoundingClientRect(), summary.getBoundingClientRect())) {
+          reopenAfterSummary = true
+          setOpen(false)
+        }
+        return
+      }
+
+      if (reopenAfterSummary) {
+        reopenAfterSummary = false
+        setOpen(true)
+      }
+    }
+
+    let summaryFrame = 0
+    const scheduleSummary = () => {
+      cancelAnimationFrame(summaryFrame)
+      summaryFrame = requestAnimationFrame(syncSummary)
+    }
+    const summaryObserver = new MutationObserver(scheduleSummary)
+    summaryObserver.observe(document.body, { childList: true, subtree: true })
+    const summaryTimer = window.setInterval(syncSummary, 200)
+    onCleanup(() => {
+      summaryObserver.disconnect()
+      cancelAnimationFrame(summaryFrame)
+      window.clearInterval(summaryTimer)
+    })
+
     const focusTrigger = () => {
       const trigger = findTrigger(effective(), ctx.t("pill.title"))
       ;(trigger ?? findPill(ctx.t("pill.title")))?.focus()
@@ -1394,7 +1434,20 @@ export default Plugin.define({
 
     const dismiss = () => setOpen(false)
 
-    const toggle = () => (open() ? close() : setOpen(true))
+    const toggle = () => {
+      if (open()) {
+        close()
+        return
+      }
+
+      const summary = summaryElement()
+      if (summary && (!lastPanelRect || rectsOverlap(lastPanelRect, summary.getBoundingClientRect()))) {
+        reopenAfterSummary = true
+        return
+      }
+
+      setOpen(true)
+    }
 
     ctx.add(Style, css)
 

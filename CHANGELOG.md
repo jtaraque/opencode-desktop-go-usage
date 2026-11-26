@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-26
+
+### Fixed
+
+- The usage panel only steps aside when it overlaps the session summary popover; otherwise it stays open and returns when the popover closes.
+- Clicking the usage pill while the session summary is open no longer flashes the panel.
+
+### Tests
+
+- Added session summary selector, visibility and rectangle overlap tests.
+
 ## [0.3.0] - 2026-11-26
 
 ### Added

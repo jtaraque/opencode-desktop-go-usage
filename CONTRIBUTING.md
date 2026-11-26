@@ -77,12 +77,13 @@ Manual checks before a UI pull request:
 7. In top tabs, confirm the sidebar-header option is disabled and the update-button pill uses the tab strip.
 8. Confirm the session-header pill sits left of the context controls.
 9. Open OpenCode settings while the panel is open; it should close, then reopen on return.
-10. Try both light and dark themes, and a display scale of 125% or 150%.
-11. Try each interface language: Spanish, English, German, French, Portuguese (Brazil), Italian, Japanese and Simplified Chinese.
-12. Simulate a failed request and confirm **Retry** works, then restore the connection.
-13. Narrow the sidebar until the longest reset line would wrap; confirm all reset lines hide together and the bar tooltip still shows each reset.
-14. Resize below 768 px and try the mobile titlebar at the top and bottom; the pill should stay reachable, the panel should open above a bottom titlebar, **Position** should be hidden, and clicking outside the panel should close it.
-15. Open, close and reopen within a minute; the timestamp should continue instead of resetting.
+10. Open the session summary popover while the panel overlaps it; the panel should close and reopen when the popover closes. Move the panel away and open the summary again; the panel should stay open.
+11. Try both light and dark themes, and a display scale of 125% or 150%.
+12. Try each interface language: Spanish, English, German, French, Portuguese (Brazil), Italian, Japanese and Simplified Chinese.
+13. Simulate a failed request and confirm **Retry** works, then restore the connection.
+14. Narrow the sidebar until the longest reset line would wrap; confirm all reset lines hide together and the bar tooltip still shows each reset.
+15. Resize below 768 px and try the mobile titlebar at the top and bottom; the pill should stay reachable, the panel should open above a bottom titlebar, **Position** should be hidden, and clicking outside the panel should close it.
+16. Open, close and reopen within a minute; the timestamp should continue instead of resetting.
 
 The panel uses the local OpenCode server. Do not include a real workspace ID, token or API key in an issue or a screenshot.
 

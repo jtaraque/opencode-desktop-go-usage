@@ -77,6 +77,27 @@ export const SESSION_HEADER_SELECTOR = [
   '[data-slot="session-header-layout"]',
 ].join(", ")
 
+export const SESSION_SUMMARY_SELECTOR = [
+  ".session-summary-popover",
+  '[data-slot="session-summary"]',
+  '[data-slot="session-summary-popover"]',
+].join(", ")
+
+export function summaryVisible(
+  element: { getClientRects(): { length: number }; checkVisibility?(): boolean } | null | undefined,
+) {
+  if (!element || element.getClientRects().length === 0) return false
+  return element.checkVisibility?.() !== false
+}
+
+export function rectsOverlap(
+  first: { left: number; top: number; right: number; bottom: number } | null | undefined,
+  second: { left: number; top: number; right: number; bottom: number } | null | undefined,
+) {
+  if (!first || !second) return false
+  return first.left < second.right && first.right > second.left && first.top < second.bottom && first.bottom > second.top
+}
+
 export function headerRightOf(
   trigger: { closest(selector: string): { getBoundingClientRect(): { right: number } } | null } | null | undefined,
 ) {

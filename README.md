@@ -68,7 +68,8 @@ Remove the entry from `opencode.json(c)`, reload the window, and delete the clon
 4. Click the sliders button in the panel header to open **Position**. Pick one of the three placements; unavailable choices are disabled. The panel closes and the pill reappears in the new place with a short pulse so you can spot it.
 5. In **Position**, drag the grip to fine-tune the panel. The offset is saved for this placement and layout; arrow keys nudge it and Shift moves 16 px. **Restore default position** returns the panel to its default anchor.
 6. Close the panel with the pill or the **X**. On a normal window, clicking outside and pressing Escape do not close it. In a narrow window, clicking outside closes it.
-7. Use **Refresh** to refresh immediately or **Console ↗** to open the usage page in the OpenCode Console. The refresh button is disabled for one minute after a request.
+7. The usage panel steps aside only when it overlaps the session summary popover; otherwise it stays open. If it steps aside, it returns when the popover closes.
+8. Use **Refresh** to refresh immediately or **Console ↗** to open the usage page in the OpenCode Console. The refresh button is disabled for one minute after a request.
 
 In top tabs, the sidebar-header placement is disabled. The update-button placement uses the end of the tab strip. In Inbox, all three placements are available. The footer placement stays anchored to the sidebar and has no drag handle.
 
