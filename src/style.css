@@ -1,0 +1,280 @@
+.ogu-panel {
+  position: fixed;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+  container-type: inline-size;
+  border: 1px solid var(--v2-border-border-muted, rgba(127, 127, 127, 0.28));
+  border-radius: 12px;
+  background: var(--v2-background-bg-base, var(--background-base, #1b1b1f));
+  color: var(--v2-text-text-base, #e5e5e5);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+  font-size: 12px;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+
+.ogu-head {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 12px 8px;
+}
+
+.ogu-title {
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ogu-sub {
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--v2-text-text-faint, rgba(127, 127, 127, 0.7));
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ogu-close {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin: -2px -4px 0 auto;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--v2-text-text-muted, rgba(127, 127, 127, 0.9));
+  cursor: pointer;
+}
+
+.ogu-close:hover {
+  background: var(--v2-background-bg-layer-hover, rgba(127, 127, 127, 0.14));
+  color: var(--v2-text-text-base, #e5e5e5);
+}
+
+.ogu-close:focus-visible,
+.ogu-btn:focus-visible {
+  outline: 2px solid var(--v2-text-text-accent, #7aa2f7);
+  outline-offset: 1px;
+}
+
+.ogu-body {
+  flex: none;
+  min-height: 0;
+  padding: 0 12px;
+}
+
+.ogu-row {
+  padding: 9px 0;
+  border-top: 1px solid var(--v2-border-border-muted, rgba(127, 127, 127, 0.2));
+}
+
+.ogu-row:first-child {
+  border-top: 0;
+}
+
+.ogu-row-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ogu-label {
+  font-weight: 530;
+}
+
+.ogu-value {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ogu-subline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 3px;
+  color: var(--v2-text-text-faint, rgba(127, 127, 127, 0.7));
+  font-size: 11px;
+}
+
+.ogu-reset {
+  min-width: 0;
+}
+
+.ogu-reset-hidden {
+  display: none;
+}
+
+.ogu-reset-samples {
+  position: absolute;
+  top: 0;
+  left: 0;
+  visibility: hidden;
+  pointer-events: none;
+  font-size: 11px;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+
+.ogu-reset-sample {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.ogu-badge {
+  flex: none;
+  color: var(--v2-state-fg-danger, #ef4444);
+  font-weight: 600;
+}
+
+.ogu-track {
+  position: relative;
+  height: 6px;
+  margin-top: 8px;
+  border-radius: 999px;
+  background: var(--v2-border-border-muted, rgba(127, 127, 127, 0.22));
+  cursor: help;
+}
+
+.ogu-fill {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  border-radius: 999px;
+  background: var(--v2-background-bg-inverse, #d4d4d8);
+}
+
+.ogu-fill-low {
+  background: var(--v2-state-fg-danger, #ef4444);
+}
+
+.ogu-marker {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--v2-text-text-accent, #7aa2f7);
+  transform: translateX(-1px);
+  pointer-events: none;
+}
+
+.ogu-note {
+  padding: 12px 0;
+  color: var(--v2-text-text-muted, rgba(127, 127, 127, 0.9));
+}
+
+.ogu-note-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.ogu-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--v2-text-text-muted, rgba(127, 127, 127, 0.9));
+  cursor: pointer;
+  font: inherit;
+  white-space: nowrap;
+}
+
+.ogu-btn:hover {
+  background: var(--v2-background-bg-layer-hover, rgba(127, 127, 127, 0.14));
+  color: var(--v2-text-text-base, #e5e5e5);
+}
+
+.ogu-btn:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+/* Keep the usage pill above the app's update pill in the sidebar footer. */
+[data-slot="vertical-tabs-footer"] > [data-slot="titlebar-update"]:has(> button[aria-label="Uso de OpenCode Go"]),
+[data-slot="vertical-tabs-footer"] > [data-slot="titlebar-update"]:has(> button[aria-label="OpenCode Go usage"]) {
+  order: -1;
+}
+
+.ogu-foot {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  row-gap: 4px;
+  padding: 7px 12px;
+  border-top: 1px solid var(--v2-border-border-muted, rgba(127, 127, 127, 0.2));
+  color: var(--v2-text-text-faint, rgba(127, 127, 127, 0.7));
+  font-size: 11px;
+}
+
+.ogu-foot-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+@container (max-width: 220px) {
+  .ogu-head {
+    gap: 6px;
+    padding: 10px 10px 6px;
+  }
+
+  .ogu-title {
+    font-size: 12px;
+  }
+
+  .ogu-body {
+    padding: 0 10px;
+  }
+
+  .ogu-row-head {
+    flex-wrap: wrap;
+    row-gap: 1px;
+  }
+
+  .ogu-value {
+    font-size: 11px;
+  }
+
+  .ogu-subline {
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+
+  .ogu-foot {
+    padding: 6px 10px;
+  }
+
+  .ogu-btn {
+    padding: 3px 4px;
+  }
+}
+
+@container (max-width: 170px) {
+  .ogu-sub {
+    display: none;
+  }
+
+  .ogu-title {
+    font-size: 11px;
+  }
+}

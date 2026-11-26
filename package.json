@@ -1,0 +1,50 @@
+{
+  "name": "opencode-desktop-go-usage",
+  "version": "0.1.0",
+  "description": "OpenCode Desktop plugin for your OpenCode Go 5-hour, weekly and monthly allowance.",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "author": "jtaraque",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jtaraque/opencode-desktop-go-usage.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jtaraque/opencode-desktop-go-usage/issues"
+  },
+  "homepage": "https://github.com/jtaraque/opencode-desktop-go-usage#readme",
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "opencode-desktop",
+    "opencode-go",
+    "solidjs",
+    "typescript"
+  ],
+  "exports": {
+    "./gui-experimental": "./dist/gui-experimental.cjs"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check": "npm run typecheck && npm test && npm run build",
+    "prepare": "npm run build"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@opencode/plugin": "2.4.2",
+    "solid-js": "1.9.20",
+    "typescript": "5.9.3",
+    "vite": "7.3.8",
+    "vite-plugin-solid": "2.11.17",
+    "vitest": "5.1.2"
+  }
+}
