@@ -4,6 +4,27 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-26
+
+### Added
+
+- Drag handle in **Position** for the session-header and sidebar-header placements.
+- Panel offsets stored per placement and layout: side tabs, top tabs and Inbox.
+- **Restore default position** button for the current placement and layout.
+- Arrow-key nudging on the drag handle; Shift moves 16 px.
+- Narrow windows place the pill in the mobile titlebar. The panel opens below a top titlebar and above a bottom titlebar. Clicking outside the panel closes it.
+- Position settings are hidden in narrow windows.
+
+### Changed
+
+- A dragged panel is clamped to the viewport and keeps at least 80 px visible.
+- The footer placement stays anchored to the sidebar and has no drag handle.
+- The session-header panel starts at the right edge of the session panel plus 20 px, so it opens in a right-side area instead of over the chat when one is open.
+
+### Tests
+
+- Added offset key, offset clamping and narrow viewport tests.
+
 ## [0.2.0] - 2026-11-26
 
 ### Added

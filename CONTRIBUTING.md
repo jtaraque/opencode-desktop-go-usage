@@ -71,16 +71,18 @@ Manual checks before a UI pull request:
 1. Open and close the panel with the pill and with the **X**.
 2. Confirm the three rows show a remaining percentage, a reset countdown and a marker.
 3. Hover anywhere on a bar and confirm the tooltip includes the window percentage, the reset and the pace.
-4. Resize the window and the sidebar; the panel should stay inside the sidebar.
+4. Resize the window and the sidebar; the footer panel should follow the sidebar and floating panels should stay inside the window.
 5. Open **Position** with the sliders button and try every available placement; the pill should pulse after each change.
-6. In top tabs, confirm the sidebar-header option is disabled and the update-button pill uses the tab strip.
-7. Confirm the session-header pill sits left of the context controls.
-8. Open OpenCode settings while the panel is open; it should close, then reopen on return.
-9. Try both light and dark themes, and a display scale of 125% or 150%.
-10. Try each interface language: Spanish, English, German, French, Portuguese (Brazil), Italian, Japanese and Simplified Chinese.
-11. Simulate a failed request and confirm **Retry** works, then restore the connection.
-12. Narrow the sidebar until the longest reset line would wrap; confirm all reset lines hide together and the bar tooltip still shows each reset.
-13. Open, close and reopen within a minute; the timestamp should continue instead of resetting.
+6. Drag the grip in **Position**; the panel should move, keep its offset after reopening, respond to arrow keys, and return home with **Restore default position**.
+7. In top tabs, confirm the sidebar-header option is disabled and the update-button pill uses the tab strip.
+8. Confirm the session-header pill sits left of the context controls.
+9. Open OpenCode settings while the panel is open; it should close, then reopen on return.
+10. Try both light and dark themes, and a display scale of 125% or 150%.
+11. Try each interface language: Spanish, English, German, French, Portuguese (Brazil), Italian, Japanese and Simplified Chinese.
+12. Simulate a failed request and confirm **Retry** works, then restore the connection.
+13. Narrow the sidebar until the longest reset line would wrap; confirm all reset lines hide together and the bar tooltip still shows each reset.
+14. Resize below 768 px and try the mobile titlebar at the top and bottom; the pill should stay reachable, the panel should open above a bottom titlebar, **Position** should be hidden, and clicking outside the panel should close it.
+15. Open, close and reopen within a minute; the timestamp should continue instead of resetting.
 
 The panel uses the local OpenCode server. Do not include a real workspace ID, token or API key in an issue or a screenshot.
 

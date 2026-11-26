@@ -32,12 +32,13 @@ This roadmap is a direction, not a promise. Each item ships when it is tested an
 - [x] Eight interface languages: Spanish, English, German, French, Portuguese (Brazil), Italian, Japanese and Simplified Chinese.
 - [x] Reset times follow the interface language.
 
-## 0.3 — remaining desktop layouts
+## 0.3 — panel position and narrow layouts
 
-- [ ] Draggable panel in the **Position** view, with offsets stored per placement.
-- [ ] **Restore default position** button for the current placement.
-- [ ] Narrow window and mobile titlebar positions.
-- [ ] Visual pass at 150% display scale. 125% already passed in side and top tabs.
+- [x] Drag handle in **Position**, with offsets stored per placement and layout.
+- [x] **Restore default position** button for the current placement and layout.
+- [x] Arrow-key nudging on the drag handle.
+- [x] Narrow window and mobile titlebar positions, including the bottom titlebar.
+- [x] Visual pass at 150% display scale. 125% passed in 0.2.
 
 
 ## 1.0 — stable

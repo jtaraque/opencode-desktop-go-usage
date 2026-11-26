@@ -2,7 +2,7 @@ import { createEffect, createMemo, createSignal, For, onCleanup, Show, untrack, 
 import { Portal } from "solid-js/web"
 import { Plugin, Slot, Store, Style, TitlebarItem, usePlugin, type Params } from "@opencode/plugin/gui"
 import { Schema } from "effect"
-import { clamp, cooldownLeft, effectivePlacement, paceOf, remainingPercent, windowLeft, type EffectivePlacement, type Placement, type WindowKey } from "./usage"
+import { applyOffset, clamp, cooldownLeft, effectivePlacement, headerRightOf, offsetKey, paceOf, remainingPercent, windowLeft, type BaseAnchor, type EffectivePlacement, type PanelLayout, type PanelOffset, type Placement, type WindowKey } from "./usage"
 import gauge from "./icons/gauge.svg?raw"
 import css from "./style.css?inline"
 
@@ -39,12 +39,18 @@ const OPEN_COOLDOWN = 60_000
 const AUTO_COOLDOWN = 5 * 60_000
 const MANUAL_COOLDOWN = 60_000
 
+
+const PANEL_OFFSET = Schema.Struct({ dx: Schema.Number, dy: Schema.Number })
+
 const definition = Plugin.define({
   icons: { gauge },
   stores: {
     prefs: Store.global(
-      Schema.Struct({ placement: Schema.Literals(["footer", "header", "sidebar"]) }),
-      { placement: "footer" },
+      Schema.Struct({
+        placement: Schema.Literals(["footer", "header", "sidebar"]),
+        offsets: Schema.optional(Schema.Record(Schema.String, PANEL_OFFSET)),
+      }),
+      { placement: "footer", offsets: {} },
     ),
   },
   i18n: {
@@ -82,6 +88,9 @@ const definition = Plugin.define({
       "settings.title": "Posición",
       "settings.description": "Elige dónde aparece el pill.",
       "settings.saved": "Posición actualizada",
+      "settings.drag": "Arrastrar panel",
+      "settings.reset": "Restablecer posición",
+      "settings.resetDone": "Posición restablecida",
       "settings.footer.label": "Junto a actualizar",
       "settings.footer.description": "El mismo hueco que el botón de actualizar: pie de la barra lateral en pestañas laterales, final de las pestañas en top tabs.",
       "settings.header.label": "Cabecera de sesión",
@@ -127,6 +136,9 @@ const definition = Plugin.define({
       "settings.title": "Position",
       "settings.description": "Choose where the pill appears.",
       "settings.saved": "Position updated",
+      "settings.drag": "Drag panel",
+      "settings.reset": "Restore default position",
+      "settings.resetDone": "Position reset",
       "settings.footer.label": "Next to update",
       "settings.footer.description": "The same slot as the update button: sidebar footer in side tabs, end of the tab strip in top tabs.",
       "settings.header.label": "Session header",
@@ -173,6 +185,9 @@ const definition = Plugin.define({
       "settings.title": "Position",
       "settings.description": "Bestimmt, wo die Anzeige erscheint.",
       "settings.saved": "Position aktualisiert",
+      "settings.drag": "Panel verschieben",
+      "settings.reset": "Standardposition wiederherstellen",
+      "settings.resetDone": "Position zurückgesetzt",
       "settings.footer.label": "Neben Aktualisieren",
       "settings.footer.description": "Derselbe Platz wie die Schaltfläche „Aktualisieren“: Fuß der Seitenleiste bei seitlichen Tabs, Ende der Tab-Leiste bei oberen Tabs.",
       "settings.header.label": "Sitzungskopf",
@@ -218,6 +233,9 @@ const definition = Plugin.define({
       "settings.title": "Position",
       "settings.description": "Choisissez où apparaît la pastille.",
       "settings.saved": "Position mise à jour",
+      "settings.drag": "Déplacer le panneau",
+      "settings.reset": "Rétablir la position par défaut",
+      "settings.resetDone": "Position réinitialisée",
       "settings.footer.label": "À côté d’Actualiser",
       "settings.footer.description": "Le même emplacement que le bouton Actualiser : pied de la barre latérale en onglets latéraux, fin de la barre d’onglets en onglets supérieurs.",
       "settings.header.label": "En-tête de session",
@@ -263,6 +281,9 @@ const definition = Plugin.define({
       "settings.title": "Posição",
       "settings.description": "Escolha onde o indicador aparece.",
       "settings.saved": "Posição atualizada",
+      "settings.drag": "Mover painel",
+      "settings.reset": "Restaurar posição padrão",
+      "settings.resetDone": "Posição restaurada",
       "settings.footer.label": "Ao lado de Atualizar",
       "settings.footer.description": "O mesmo espaço do botão Atualizar: rodapé da barra lateral em abas laterais, fim da barra de abas em abas superiores.",
       "settings.header.label": "Cabeçalho da sessão",
@@ -308,6 +329,9 @@ const definition = Plugin.define({
       "settings.title": "Posizione",
       "settings.description": "Scegli dove appare l’indicatore.",
       "settings.saved": "Posizione aggiornata",
+      "settings.drag": "Sposta pannello",
+      "settings.reset": "Ripristina posizione predefinita",
+      "settings.resetDone": "Posizione ripristinata",
       "settings.footer.label": "Accanto ad Aggiorna",
       "settings.footer.description": "Lo stesso spazio del pulsante Aggiorna: piè di pagina della barra laterale nelle schede laterali, fine della barra delle schede nelle schede superiori.",
       "settings.header.label": "Intestazione sessione",
@@ -353,6 +377,9 @@ const definition = Plugin.define({
       "settings.title": "位置",
       "settings.description": "表示位置を選択してください。",
       "settings.saved": "位置を更新しました",
+      "settings.drag": "パネルを移動",
+      "settings.reset": "既定の位置に戻す",
+      "settings.resetDone": "位置をリセットしました",
       "settings.footer.label": "更新の隣",
       "settings.footer.description": "更新ボタンと同じ場所: サイドタブではサイドバーの下部、上部タブではタブバーの末尾。",
       "settings.header.label": "セッションヘッダー",
@@ -398,6 +425,9 @@ const definition = Plugin.define({
       "settings.title": "位置",
       "settings.description": "选择显示位置。",
       "settings.saved": "位置已更新",
+      "settings.drag": "拖动面板",
+      "settings.reset": "恢复默认位置",
+      "settings.resetDone": "位置已重置",
       "settings.footer.label": "更新按钮旁",
       "settings.footer.description": "与更新按钮相同的位置：侧边标签页中位于侧边栏底部，顶部标签页中位于标签栏末尾。",
       "settings.header.label": "会话标题栏",
@@ -650,7 +680,13 @@ function InjectedTrigger(props: {
   return null
 }
 
-function PlacementSettings(props: { hasSidebar: Accessor<boolean>; onChoose: (placement: Placement) => void }) {
+function PlacementSettings(props: {
+  hasSidebar: Accessor<boolean>
+  onChoose: (placement: Placement) => void
+  showReset: Accessor<boolean>
+  canReset: Accessor<boolean>
+  onReset: () => void
+}) {
   const ctx = usePlugin<typeof definition>()
 
   const available = (id: Placement) => id !== "sidebar" || props.hasSidebar()
@@ -687,6 +723,13 @@ function PlacementSettings(props: { hasSidebar: Accessor<boolean>; onChoose: (pl
           )
         }}
       </For>
+      <Show when={props.showReset()}>
+        <div class="ogu-reset-position">
+          <button type="button" class="ogu-btn" disabled={!props.canReset()} onClick={props.onReset}>
+            {ctx.t("settings.reset")}
+          </button>
+        </div>
+      </Show>
     </div>
   )
 }
@@ -696,6 +739,7 @@ function UsagePanel(props: {
   placement: Accessor<EffectivePlacement>
   hasSidebar: Accessor<boolean>
   onClose: () => void
+  onDismiss: () => void
   onPlaced: () => void
 }) {
   const ctx = usePlugin<typeof definition>()
@@ -708,12 +752,50 @@ function UsagePanel(props: {
   const [lastRequestAt, setLastRequestAt] = createSignal<number>()
   const [hideResets, setHideResets] = createSignal(false)
   const [view, setView] = createSignal<"usage" | "settings">("usage")
+  const [dragging, setDragging] = createSignal(false)
+
+  createEffect(() => {
+    if (ctx.layout.narrow()) setView("usage")
+  })
+
+  const layout = (): PanelLayout => {
+    if (!props.hasSidebar()) return "top"
+    const sidebar = document.querySelector<HTMLElement>('aside[data-slot="vertical-tabs-sidebar"]')
+    if (!sidebar) return "top"
+
+    const closeLabels = new Set(["Close tab", ctx.t("ui.tabs.close")])
+    const tabs = Array.from(sidebar.querySelectorAll<HTMLButtonElement>("button[aria-label]"))
+      .some((element) => closeLabels.has(element.getAttribute("aria-label") ?? ""))
+    return tabs ? "side" : "inbox"
+  }
+
+  const draggable = () => props.placement() === "header" || props.placement() === "sidebar"
+  const offsets = () => ctx.stores.prefs.value.offsets ?? {}
+
+  const closeOutside = (event: PointerEvent) => {
+    if (!props.open() || !ctx.layout.narrow()) return
+    const target = event.target
+    if (!(target instanceof Node)) return
+    if (panel?.contains(target)) return
+
+    const trigger = findTrigger(props.placement(), ctx.t("pill.title"))
+    if (trigger?.contains(target)) return
+    props.onDismiss()
+  }
+
+  createEffect(() => {
+    if (!props.open() || !ctx.layout.narrow()) return
+    document.addEventListener("pointerdown", closeOutside, true)
+    onCleanup(() => document.removeEventListener("pointerdown", closeOutside, true))
+  })
 
   let panel: HTMLDivElement | undefined
   let samples: HTMLDivElement | undefined
   let frame = 0
   let disposed = false
   let request = 0
+  let baseAnchor: BaseAnchor | undefined
+  let dragStart: { x: number; y: number; base: BaseAnchor; offset: PanelOffset } | undefined
 
   const load = async (mode: "open" | "auto" | "manual") => {
     if (loading()) return
@@ -796,6 +878,7 @@ function UsagePanel(props: {
         return
       }
 
+      baseAnchor = undefined
       setAnchor({
         left: box.left + pad,
         width,
@@ -816,12 +899,31 @@ function UsagePanel(props: {
       }
       left = sidebar.getBoundingClientRect().right + pad + 2
     } else if (kind === "header") {
-      left = button.right - width + 10
+      const headerRight = headerRightOf(trigger)
+      // Start beside the chat panel, not over it, when the app reserves a right-side area.
+      left = headerRight !== undefined ? headerRight + 20 : button.right - width + 20
     } else {
-      left = button.right - width + 2
+      left = button.right - width + 12
     }
 
     left = clamp(left, pad, window.innerWidth - width - pad)
+
+    if (kind === "titlebar" && button.top > window.innerHeight / 2) {
+      const maxHeight = button.top - pad * 2
+      if (maxHeight < 80) {
+        setAnchor(undefined)
+        return
+      }
+
+      baseAnchor = undefined
+      setAnchor({
+        left,
+        width,
+        bottom: Math.max(pad, window.innerHeight - button.top + pad),
+        maxHeight,
+      })
+      return
+    }
 
     const top = button.bottom + (kind === "titlebar" ? pad + 10 : kind === "sidebar" ? pad + 36 : pad)
     const maxHeight = window.innerHeight - top - pad
@@ -829,13 +931,122 @@ function UsagePanel(props: {
       setAnchor(undefined)
       return
     }
+
+    if (kind === "header" || kind === "sidebar") {
+      const base = { left, width, top }
+      baseAnchor = base
+      setAnchor(applyOffset(base, offsets()[offsetKey(kind, layout())], { width: window.innerWidth, height: window.innerHeight }))
+      return
+    }
+
+    baseAnchor = undefined
     setAnchor({ left, width, top, maxHeight })
   }
 
   const scheduleMeasure = () => {
+    if (dragging()) return
     cancelAnimationFrame(frame)
     frame = requestAnimationFrame(measure)
   }
+
+  const saveOffset = (placement: "header" | "sidebar", offset: PanelOffset) => {
+    const key = offsetKey(placement, layout())
+    ctx.stores.prefs.update((draft) => {
+      const next = { ...(draft.offsets ?? {}) }
+      if (Math.abs(offset.dx) < 1 && Math.abs(offset.dy) < 1) delete next[key]
+      else next[key] = { dx: Math.round(offset.dx), dy: Math.round(offset.dy) }
+      draft.offsets = next
+    })
+  }
+
+  const moveDrag = (event: PointerEvent) => {
+    if (!dragStart) return
+    const dx = dragStart.offset.dx + event.clientX - dragStart.x
+    const dy = dragStart.offset.dy + event.clientY - dragStart.y
+    setAnchor(applyOffset(dragStart.base, { dx, dy }, { width: window.innerWidth, height: window.innerHeight }))
+  }
+
+  const finishDrag = () => {
+    window.removeEventListener("pointermove", moveDrag)
+    window.removeEventListener("pointerup", finishDrag)
+    window.removeEventListener("pointercancel", finishDrag)
+
+    if (dragStart) {
+      const current = anchor()
+      const placement = props.placement()
+      if (current && current.top !== undefined && (placement === "header" || placement === "sidebar")) {
+        saveOffset(placement, { dx: current.left - dragStart.base.left, dy: current.top - dragStart.base.top })
+      }
+    }
+
+    dragStart = undefined
+    setDragging(false)
+    scheduleMeasure()
+  }
+
+  const startDrag = (event: PointerEvent) => {
+    if (view() !== "settings" || !draggable() || !baseAnchor) return
+    const current = anchor()
+    if (!current || current.top === undefined) return
+
+    event.preventDefault()
+    dragStart = {
+      x: event.clientX,
+      y: event.clientY,
+      base: baseAnchor,
+      offset: { dx: current.left - baseAnchor.left, dy: current.top - baseAnchor.top },
+    }
+    setDragging(true)
+    window.addEventListener("pointermove", moveDrag)
+    window.addEventListener("pointerup", finishDrag)
+    window.addEventListener("pointercancel", finishDrag)
+  }
+
+  const nudge = (event: KeyboardEvent) => {
+    const step = event.shiftKey ? 16 : 4
+    const key = event.key
+    if (key !== "ArrowLeft" && key !== "ArrowRight" && key !== "ArrowUp" && key !== "ArrowDown") return
+    if (view() !== "settings" || !draggable() || !baseAnchor) return
+
+    const current = anchor()
+    if (!current || current.top === undefined) return
+
+    event.preventDefault()
+    const dx = current.left - baseAnchor.left + (key === "ArrowLeft" ? -step : key === "ArrowRight" ? step : 0)
+    const dy = current.top - baseAnchor.top + (key === "ArrowUp" ? -step : key === "ArrowDown" ? step : 0)
+    const next = applyOffset(baseAnchor, { dx, dy }, { width: window.innerWidth, height: window.innerHeight })
+    setAnchor(next)
+
+    const placement = props.placement()
+    if (placement === "header" || placement === "sidebar") {
+      saveOffset(placement, { dx: next.left - baseAnchor.left, dy: next.top - baseAnchor.top })
+    }
+  }
+
+  const reset = () => {
+    const placement = props.placement()
+    if (placement !== "header" && placement !== "sidebar") return
+
+    const key = offsetKey(placement, layout())
+    ctx.stores.prefs.update((draft) => {
+      const next = { ...(draft.offsets ?? {}) }
+      delete next[key]
+      draft.offsets = next
+    })
+    ctx.toast.show({ title: ctx.t("settings.resetDone"), variant: "success" })
+    scheduleMeasure()
+  }
+
+  const canReset = () => {
+    const placement = props.placement()
+    return (placement === "header" || placement === "sidebar") && !!offsets()[offsetKey(placement, layout())]
+  }
+
+  onCleanup(() => {
+    window.removeEventListener("pointermove", moveDrag)
+    window.removeEventListener("pointerup", finishDrag)
+    window.removeEventListener("pointercancel", finishDrag)
+  })
 
   createEffect(() => {
     if (!props.open()) {
@@ -932,6 +1143,7 @@ function UsagePanel(props: {
         <div
           ref={(element) => (panel = element)}
           class="ogu-panel"
+          classList={{ "ogu-dragging": dragging() }}
           role="dialog"
           aria-modal="false"
           aria-label={ctx.t("pill.title")}
@@ -941,6 +1153,27 @@ function UsagePanel(props: {
             : undefined}
         >
           <div class="ogu-head">
+            <Show when={view() === "settings" && draggable()}>
+              <button
+                type="button"
+                class="ogu-grip"
+                aria-label={ctx.t("settings.drag")}
+                title={ctx.t("settings.drag")}
+                onPointerDown={(event) => startDrag(event)}
+                onKeyDown={(event) => nudge(event)}
+              >
+                <svg width="10" height="18" viewBox="0 0 10 18" aria-hidden="true">
+                  <g fill="currentColor">
+                    <circle cx="3" cy="4" r="1.2" />
+                    <circle cx="7" cy="4" r="1.2" />
+                    <circle cx="3" cy="9" r="1.2" />
+                    <circle cx="7" cy="9" r="1.2" />
+                    <circle cx="3" cy="14" r="1.2" />
+                    <circle cx="7" cy="14" r="1.2" />
+                  </g>
+                </svg>
+              </button>
+            </Show>
             <div style={{ "min-width": 0, flex: 1 }}>
               <div class="ogu-title">
                 {view() === "settings" ? ctx.t("settings.title") : ctx.t("panel.title")}
@@ -956,16 +1189,18 @@ function UsagePanel(props: {
               </Show>
             </div>
             <div class="ogu-head-actions">
-              <button
-                type="button"
-                class="ogu-close"
-                aria-label={ctx.t("settings.open")}
-                aria-pressed={view() === "settings"}
-                title={ctx.t("settings.open")}
-                onClick={() => setView(view() === "settings" ? "usage" : "settings")}
-              >
-                <ctx.ui.Icon name="sliders" size="small" />
-              </button>
+              <Show when={!ctx.layout.narrow()}>
+                <button
+                  type="button"
+                  class="ogu-close"
+                  aria-label={ctx.t("settings.open")}
+                  aria-pressed={view() === "settings"}
+                  title={ctx.t("settings.open")}
+                  onClick={() => setView(view() === "settings" ? "usage" : "settings")}
+                >
+                  <ctx.ui.Icon name="sliders" size="small" />
+                </button>
+              </Show>
               <button
                 type="button"
                 class="ogu-close"
@@ -980,7 +1215,7 @@ function UsagePanel(props: {
             </div>
           </div>
 
-          <Show when={view() === "usage"} fallback={<PlacementSettings hasSidebar={props.hasSidebar} onChoose={choose} />}>
+          <Show when={view() === "usage"} fallback={<PlacementSettings hasSidebar={props.hasSidebar} onChoose={choose} showReset={draggable} canReset={canReset} onReset={reset} />}>
             <div class="ogu-body">
             <Show when={limits() === undefined && !error()}>
               <div class="ogu-note">{ctx.t("loading")}</div>
@@ -1092,7 +1327,9 @@ export default Plugin.define({
     })
 
     const placement = () => ctx.stores.prefs.value.placement
-    const effective = (): EffectivePlacement => effectivePlacement(placement(), hasSidebar(), hasSession())
+    const effective = (): EffectivePlacement => ctx.layout.narrow()
+      ? "titlebar"
+      : effectivePlacement(placement(), hasSidebar(), hasSession())
 
     createEffect(() => {
       if (!hasSidebar() && placement() === "sidebar") {
@@ -1155,6 +1392,8 @@ export default Plugin.define({
       queueMicrotask(focusTrigger)
     }
 
+    const dismiss = () => setOpen(false)
+
     const toggle = () => (open() ? close() : setOpen(true))
 
     ctx.add(Style, css)
@@ -1189,7 +1428,7 @@ export default Plugin.define({
       at: "window.bottom",
       render: () => (
         <>
-          <UsagePanel open={open} placement={effective} hasSidebar={hasSidebar} onClose={close} onPlaced={flash} />
+          <UsagePanel open={open} placement={effective} hasSidebar={hasSidebar} onClose={close} onDismiss={dismiss} onPlaced={flash} />
           <InjectedTrigger placement="sidebar" active={() => effective() === "sidebar"} open={open} toggle={toggle} />
         </>
       ),

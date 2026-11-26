@@ -65,6 +65,45 @@
   margin: -2px -4px 0 auto;
 }
 
+.ogu-grip {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 24px;
+  margin: -1px 0 0 -4px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--v2-icon-icon-muted, rgba(127, 127, 127, 0.8));
+  cursor: grab;
+  touch-action: none;
+}
+
+.ogu-grip:hover {
+  color: var(--v2-text-text-base, #e5e5e5);
+}
+
+.ogu-grip:active {
+  cursor: grabbing;
+}
+
+.ogu-grip:focus-visible {
+  outline: 2px solid var(--v2-text-text-accent, #7aa2f7);
+  outline-offset: 1px;
+}
+
+.ogu-grip svg {
+  display: block;
+}
+
+.ogu-panel.ogu-dragging {
+  user-select: none;
+  cursor: grabbing;
+}
+
 .ogu-close:hover {
   background: var(--v2-background-bg-layer-hover, rgba(127, 127, 127, 0.14));
   color: var(--v2-text-text-base, #e5e5e5);
@@ -374,6 +413,18 @@
   flex: none;
   margin-top: 2px;
   color: var(--v2-text-text-accent, #7aa2f7);
+}
+
+.ogu-reset-position {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--v2-border-border-muted, rgba(127, 127, 127, 0.2));
+}
+
+.ogu-reset-position .ogu-btn {
+  justify-content: center;
+  width: 100%;
+  padding: 6px;
 }
 
 @container (max-width: 220px) {

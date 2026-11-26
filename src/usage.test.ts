@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { clamp, cooldownLeft, effectivePlacement, paceOf, remainingPercent, startOfWindow, windowLeft } from "./usage"
+import { applyOffset, clamp, cooldownLeft, effectivePlacement, headerRightOf, SESSION_HEADER_SELECTOR, offsetKey, paceOf, remainingPercent, startOfWindow, windowLeft } from "./usage"
 
 const HOUR = 60 * 60 * 1_000
 const DAY = 24 * HOUR
@@ -140,5 +140,78 @@ describe("effectivePlacement", () => {
   it("keeps the session header with a session", () => {
     expect(effectivePlacement("header", false, true)).toBe("header")
     expect(effectivePlacement("header", true, true)).toBe("header")
+  })
+})
+
+describe("offsetKey", () => {
+  it("scopes a position by placement and layout", () => {
+    expect(offsetKey("header", "inbox")).toBe("header:inbox")
+    expect(offsetKey("sidebar", "side")).toBe("sidebar:side")
+  })
+})
+
+describe("headerRightOf", () => {
+  it("finds the session header with class and data-slot fallbacks", () => {
+    let seen = ""
+    const trigger = {
+      closest(selector: string) {
+        seen = selector
+        return { getBoundingClientRect: () => ({ right: 700 }) }
+      },
+    }
+
+    expect(headerRightOf(trigger)).toBe(700)
+    expect(seen).toContain(".session-header-layout")
+    expect(seen).toContain('[data-slot="session-header"]')
+    expect(SESSION_HEADER_SELECTOR).toContain('[data-slot="session-header-layout"]')
+  })
+
+  it("returns undefined when the trigger or the header is missing", () => {
+    expect(headerRightOf(null)).toBeUndefined()
+    expect(headerRightOf({ closest: () => null })).toBeUndefined()
+  })
+})
+
+describe("applyOffset", () => {
+  const base = { left: 100, top: 100, width: 320 }
+  const view = { width: 1_200, height: 800 }
+
+  it("keeps the default position without an offset", () => {
+    expect(applyOffset(base, undefined, view)).toEqual({
+      left: 100,
+      top: 100,
+      width: 320,
+      maxHeight: 692,
+    })
+  })
+
+  it("moves the panel and clamps it to the viewport", () => {
+    expect(applyOffset(base, { dx: 20, dy: 30 }, view)).toEqual({
+      left: 120,
+      top: 130,
+      width: 320,
+      maxHeight: 662,
+    })
+    expect(applyOffset(base, { dx: -500, dy: -500 }, view)).toEqual({
+      left: 8,
+      top: 8,
+      width: 320,
+      maxHeight: 784,
+    })
+    expect(applyOffset(base, { dx: 2_000, dy: 2_000 }, view)).toEqual({
+      left: 872,
+      top: 712,
+      width: 320,
+      maxHeight: 80,
+    })
+  })
+
+  it("keeps a narrow viewport usable", () => {
+    expect(applyOffset({ left: 20, top: 40, width: 320 }, { dx: 100, dy: 1_000 }, { width: 360, height: 640 })).toEqual({
+      left: 32,
+      top: 552,
+      width: 320,
+      maxHeight: 80,
+    })
   })
 })

@@ -15,9 +15,11 @@ A small OpenCode Desktop plugin that shows your OpenCode Go allowance in the sid
 
 - A gauge pill you can place next to the update button, in the session header or in the sidebar header.
 - A floating panel anchored to the pill. It may overlap the chat while open.
+- A drag handle in **Position** to fine-tune the panel. Offsets are saved per placement and layout, and **Restore default position** brings the panel back.
 - 5-hour, weekly and monthly allowance with remaining percentage and reset countdown.
 - A vertical marker for the time left in each window, plus a tooltip with the pace: `Under pace`, `On pace` or `Over pace`.
 - Manual refresh with a one-minute cooldown and automatic refresh every 5 minutes while the panel is open. Opening the panel requests at most once per minute.
+- Narrow windows use the mobile titlebar, at the top or bottom of the window. Clicking outside the panel closes it.
 - Spanish, English, German, French, Portuguese (Brazil), Italian, Japanese and Simplified Chinese copy; light and dark themes.
 - Read-only display: the plugin reads the local OpenCode server and opens the Console only when you ask it to.
 
@@ -28,6 +30,7 @@ The plugin follows the app language. The labels below use the English copy.
 - OpenCode Desktop 2.4.x with GUI plugin support. Tested with 2.4.1.
 - An OpenCode Go subscription connected to the workspace.
 - Side tabs, top tabs and Inbox are supported. The sidebar-header placement needs a sidebar (side tabs or Inbox); the update-button placement works in all three layouts.
+- Narrow windows are supported. The pill moves to the mobile titlebar, at the top or bottom according to the app setting.
 - Windows was tested; macOS and Linux are expected to work but have not been tested by the author.
 
 ## Installation
@@ -63,12 +66,15 @@ Remove the entry from `opencode.json(c)`, reload the window, and delete the clon
 2. Click it to open the panel. Header placements open downward; the update-button placement opens upward in side tabs and Inbox, and downward in top tabs.
 3. Read each window: the bar shows the allowance left, the vertical line shows the time left, and the tooltip compares both.
 4. Click the sliders button in the panel header to open **Position**. Pick one of the three placements; unavailable choices are disabled. The panel closes and the pill reappears in the new place with a short pulse so you can spot it.
-5. Close the panel with the pill or the **X**. Clicking outside and pressing Escape do not close it.
-6. Use **Refresh** to refresh immediately or **Console ↗** to open the usage page in the OpenCode Console. The refresh button is disabled for one minute after a request.
+5. In **Position**, drag the grip to fine-tune the panel. The offset is saved for this placement and layout; arrow keys nudge it and Shift moves 16 px. **Restore default position** returns the panel to its default anchor.
+6. Close the panel with the pill or the **X**. On a normal window, clicking outside and pressing Escape do not close it. In a narrow window, clicking outside closes it.
+7. Use **Refresh** to refresh immediately or **Console ↗** to open the usage page in the OpenCode Console. The refresh button is disabled for one minute after a request.
 
-In top tabs, the sidebar-header placement is disabled. The update-button placement uses the end of the tab strip. In Inbox, all three placements are available.
+In top tabs, the sidebar-header placement is disabled. The update-button placement uses the end of the tab strip. In Inbox, all three placements are available. The footer placement stays anchored to the sidebar and has no drag handle.
 
-In the sidebar footer the panel follows the sidebar width. In the header and sidebar-header placements it is a 320 px floating panel and may overlap the chat. On a narrow panel the rows wrap, the header summary hides and the footer buttons stack. All three reset lines hide together as soon as the longest one would wrap to a second line; the bar tooltip still shows each reset. If the available height above or below the pill is short, the panel scrolls instead of overflowing the viewport.
+In a narrow window the pill moves to the mobile titlebar. The panel opens below a top titlebar and above a bottom titlebar, **Position** is hidden, and clicking outside the panel closes it.
+
+In the sidebar footer the panel follows the sidebar width. In the header and sidebar-header placements it is a 320 px floating panel and may overlap the chat. The session-header panel starts at the right edge of the session panel plus 20 px, so it opens in a right-side area when one is open. On a narrow panel the rows wrap, the header summary hides and the footer buttons stack. All three reset lines hide together as soon as the longest one would wrap to a second line; the bar tooltip still shows each reset. If the available height above or below the pill is short, the panel scrolls instead of overflowing the viewport.
 
 The five-hour window starts when you first use the allowance and lasts five hours. The weekly window resets on Monday at 00:00 UTC. The monthly window resets when a new paid period starts.
 
@@ -96,6 +102,7 @@ The panel only requests data while it is open. Opening it again within a minute 
 | Side tabs | All three |
 | Top tabs | Next to update and session header; sidebar header is disabled |
 | Inbox | All three |
+| Narrow window | Pill in the mobile titlebar; panel opens above a bottom titlebar |
 
 The GUI plugin API is experimental. A future OpenCode release may change it; check the releases page before updating if the pill stops loading.
 
@@ -106,6 +113,7 @@ The GUI plugin API is experimental. A future OpenCode release may change it; che
 - Confirm the plugin is listed in **Settings → Extensions → Plugins**.
 - Run `opencode plugin list` and check that the plugin is active.
 - The sidebar-header placement needs a sidebar; in top tabs it is disabled. The update-button placement works in every layout.
+- In a narrow window the pill is in the mobile titlebar and **Position** is hidden. Widen the window to change the placement.
 - Reload the window.
 
 **`opencode plugin add github:…` fails with `git dep preparation failed`**

@@ -1,6 +1,6 @@
 {
   "name": "opencode-desktop-go-usage",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "OpenCode Desktop plugin for your OpenCode Go 5-hour, weekly and monthly allowance.",
   "private": true,
   "type": "module",
